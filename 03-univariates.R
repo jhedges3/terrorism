@@ -18,7 +18,7 @@ library(vcd)
 library(prettyR)
 
 #' Get the selected data, saved in 02-selection.R
-data <- readRDS("data.06to13.select.rds")
+data <- readRDS("data.select.rds")
 
 #' Set output path
 path.output <- "/Users/jameshedges/Documents/Projects/terrorism/output"

@@ -10,21 +10,18 @@ Repos: CRAN=http://cran.rstudio.com,
 Package: BH
 Source: CRAN
 Version: 1.55.0-3
+Hash: 1c7274ffc895d2c8f23ae98d83a912ed
 
 Package: BradleyTerry2
 Source: CRAN
 Version: 1.0-6
-Requires: brglm, gtools, lme4
 Hash: 56bc3d675b15b57052bf564146e3550e
+Requires: brglm, gtools, lme4
 
 Package: DBI
 Source: CRAN
 Version: 0.3.1
-
-Package: MASS
-Source: CRAN
-Version: 7.3-35
-Hash: 2a7641e407ce2a484d5a587a4e30a9aa
+Hash: 3a9e85b26ec3ab570266bccb3f9de055
 
 Package: R6
 Source: CRAN
@@ -62,26 +59,24 @@ Hash: cb26464a8321628636b547518994c931
 Package: brglm
 Source: CRAN
 Version: 0.5-9
-Requires: profileModel
 Hash: ab397c3e2a17f6fa4bb52992c8a0c871
+Requires: profileModel
 
 Package: caTools
 Source: CRAN
 Version: 1.17.1
-Requires: bitops
 Hash: bb5fdc266f716b8a289a4f92007d53e3
+Requires: bitops
 
 Package: car
 Source: CRAN
-Version: 2.0-22
-Requires: MASS
-Hash: 2fb4da98043926a3745e0c6a2f23fd04
+Version: 2.0-25
 
 Package: caret
 Source: CRAN
 Version: 6.0-41
-Requires: BradleyTerry2, car, foreach, ggplot2, plyr, reshape2
 Hash: 34824adecdb6f6228e3e68696f1c7dec
+Requires: BradleyTerry2, car, foreach, ggplot2, plyr, reshape2
 
 Package: colorspace
 Source: CRAN
@@ -101,14 +96,14 @@ Hash: 89dc4c8734dad5322bb3c5c2af09056f
 Package: downloader
 Source: CRAN
 Version: 0.3
-Requires: digest
 Hash: c257c373d85fe5ece9b9bbfd92950283
+Requires: digest
 
 Package: dplyr
 Source: CRAN
 Version: 0.4.1
+Hash: 4ce03ad26fb9592dda1274f72c5d3257
 Requires: BH, DBI, R6, Rcpp, assertthat, lazyeval, magrittr
-Hash: c20d432e60e3a8446b7a8e82a3d7e7d4
 
 Package: e1071
 Source: CRAN
@@ -118,14 +113,14 @@ Hash: 0fa8059d11f82a0c054aaa5065e80206
 Package: evaluate
 Source: CRAN
 Version: 0.5.5
-Requires: stringr
 Hash: 20881970e590ee68de97a468694db7b0
+Requires: stringr
 
 Package: foreach
 Source: CRAN
 Version: 1.4.2
-Requires: iterators
 Hash: fbdaa99f6c6bd4f252c5d8412f6e79c9
+Requires: iterators
 
 Package: formatR
 Source: CRAN
@@ -135,8 +130,8 @@ Hash: a90c211d7df7e61a72b8ab6c99c2e848
 Package: ggplot2
 Source: CRAN
 Version: 1.0.1
-Requires: MASS, digest, gtable, plyr, proto, reshape2, scales
 Hash: 06a8e5faacfd76c9e4ab11a5b7ad94d6
+Requires: digest, gtable, plyr, proto, reshape2, scales
 
 Package: gtable
 Source: CRAN
@@ -156,8 +151,8 @@ Hash: 8c77cca8556e1501621b4a5ccb7999bd
 Package: htmltools
 Source: CRAN
 Version: 0.2.6
-Requires: digest
 Hash: 2c87108d130de261ac3c468d3316ae42
+Requires: digest
 
 Package: iterators
 Source: CRAN
@@ -167,8 +162,8 @@ Hash: b5320a58712688d5b18c207cf256ef3f
 Package: knitr
 Source: CRAN
 Version: 1.9
-Requires: digest, formatR, highr, stringr, markdown, evaluate
 Hash: 41c29594ced4d02b3b90b4c375680cd3
+Requires: digest, formatR, highr, stringr, markdown, evaluate
 
 Package: labeling
 Source: CRAN
@@ -182,14 +177,14 @@ Version: 0.1.10
 Package: lme4
 Source: CRAN
 Version: 1.1-7
-Requires: MASS, Rcpp, RcppEigen, minqa, nloptr
 Hash: 1855ab0faa27e3250ce386420cf1c670
+Requires: Rcpp, RcppEigen, minqa, nloptr
 
 Package: lubridate
 Source: CRAN
 Version: 1.3.3
-Requires: memoise, plyr, stringr
 Hash: f19612b23b1b15febdf30ee920a6e7df
+Requires: memoise, plyr, stringr
 
 Package: magrittr
 Source: CRAN
@@ -198,14 +193,14 @@ Version: 1.5
 Package: markdown
 Source: CRAN
 Version: 0.7.4
-Requires: mime
 Hash: 01d7f71ed6e3d9b1c17ba51cff91be72
+Requires: mime
 
 Package: memoise
 Source: CRAN
 Version: 0.2.1
-Requires: digest
 Hash: fc52fa39dfd216c44d64812ff31b1c67
+Requires: digest
 
 Package: mime
 Source: CRAN
@@ -215,14 +210,14 @@ Hash: 9179db921fcb2e5be44e217042ed06bc
 Package: minqa
 Source: CRAN
 Version: 1.2.4
-Requires: Rcpp
 Hash: bf5030834197a011dc7bc9e117ab8ce3
+Requires: Rcpp
 
 Package: munsell
 Source: CRAN
 Version: 0.4.2
-Requires: colorspace
 Hash: fa8af6d040041439b249351e9d16ae9a
+Requires: colorspace
 
 Package: nloptr
 Source: CRAN
@@ -231,9 +226,9 @@ Hash: 2197af13ece296fdf1dd8f8a4e5a40e1
 
 Package: openxlsx
 Source: CRAN
-Version: 2.2.1
+Version: 2.4.0
+Hash: c32dc0d2c84d700e129b27a4b8d7e995
 Requires: Rcpp
-Hash: bb231e19e3f76de35d63dd960f9c9541
 
 Package: packrat
 Source: CRAN
@@ -248,8 +243,8 @@ Hash: 5573370304d0515016cc8a2ffa52545b
 Package: plyr
 Source: CRAN
 Version: 1.8.1
-Requires: Rcpp
 Hash: 7dd935ee4050eaf2973108be2faf245e
+Requires: Rcpp
 
 Package: prettyR
 Source: CRAN
@@ -274,14 +269,14 @@ Hash: 5ea21341e7c1d6a40cdde6ef470fec92
 Package: reshape2
 Source: CRAN
 Version: 1.4.1
-Requires: Rcpp, stringr, plyr
 Hash: c401ef665db07687e1e54fbc60c683bb
+Requires: Rcpp, stringr, plyr
 
 Package: rmarkdown
 Source: github
 Version: 0.3.10
-Requires: yaml, caTools, htmltools, knitr
 Hash: b96214b9ac86b437067a0aa21442203f52face83
+Requires: yaml, caTools, htmltools, knitr
 GithubRepo: rmarkdown
 GithubUsername: rstudio
 GithubRef: v0.98.1000
@@ -290,8 +285,8 @@ GithubSha1: b96214b9ac86b437067a0aa21442203f52face83
 Package: scales
 Source: CRAN
 Version: 0.2.4
-Requires: RColorBrewer, dichromat, labeling, plyr, munsell
 Hash: b8b1af97bd07818605223060386b00dd
+Requires: RColorBrewer, dichromat, labeling, plyr, munsell
 
 Package: stringr
 Source: CRAN
@@ -301,20 +296,20 @@ Hash: cdde0cfa0f52cffeaca23a11a3899779
 Package: vcd
 Source: CRAN
 Version: 1.3-2
-Requires: MASS, colorspace
 Hash: 84c950c179b4c1782e91ebf456bf8c6d
+Requires: colorspace
 
 Package: xlsx
 Source: CRAN
 Version: 0.5.7
-Requires: rJava, xlsxjars
 Hash: 4083efd9872d1c233a6b6b1ccfc13e4a
+Requires: rJava, xlsxjars
 
 Package: xlsxjars
 Source: CRAN
 Version: 0.6.1
-Requires: rJava
 Hash: 3601d069f9b45b0d9a39b6954f4fed48
+Requires: rJava
 
 Package: yaml
 Source: CRAN

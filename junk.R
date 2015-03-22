@@ -126,4 +126,6 @@
 # 
 # foo <- data.100 %>% 
 #   group_by(extended)
-
+path.codes <- "/Users/jameshedges/Documents/Projects/terrorism/terrorism"
+files <- list.files(path=path.codes)
+bla <- read.csv(paste(path.codes, files[1], sep="/"))
