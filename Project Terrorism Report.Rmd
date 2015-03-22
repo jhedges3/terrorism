@@ -1,0 +1,45 @@
+---
+title: "Project Terrorism Report"
+author: "James Hedges"
+date: "March 8, 2015"
+output: html_document
+---
+# Background on dataset
+The GTD gives clear information on definition of terrorism and inclusion. The incident must be intentional, must entail some level of violence or threat of violence, and must be perpretrated by sub-national actors (i.e., can't be examples of state terrorism). Two of these three conditions must be met: (1) act must be aimed at attaining a political, economic, religious, or social goal; (2) must be evidence of an intention to coerce, intimidate, or convey some other message to a larger audience (or audiences) than the immediate victims; (3) action must be outside the context of legitimate warfare activities (i.e., must be outside what is permitted by humanitarian law).
+
+My objective was to get clean data on terrorism incidents in the recent period. I wanted to work with a sufficient amount of data to get a clear idea of what's going on and to be able to build generality, but not so much as to make things more difficult to deal with. I also considered that the data were collected by different organizations in different periods and I wanted to minimize variation from that. The data is split into that 2006 to 2013 period. The most recent earlier set would include 1993, where data were incomplete and reconstructed.
+
+I selected a set of columns that I thought would be useful for the models, but not include too much overlap. I didn't include anything that would have been in the form of text, although it could be helpful to return to that and do some analysis of the included text. I also removed all rows with missing values. It would be helpful also to know more about the origin in each case, but would take a lot of time. I made additional selections: (1) doubtterr variable is 0, there isn't doubt about whether the incident is terrorism; (2) success variable is 1, want to consider only cases where the incident actually happened; (3) weaptype1 isn't 13, want to only consider cases where the general weapon type is defined. [can add more on the extent of data reduction from each of these]
+
+# Countries and regions with most incidents
+The countries with the greatest number of incidents are: Iraq, Pakistan, Afghanistan, India, and Thailand. The top three of these account for about 55% of all incidents, from roughly 15.7K of roughly 29K. For reference, the War in Iraq is March 20, 2003 to December 18, 2011, so about six of the eight years that this data covers. War in Afghanistan is October 7, 2001 to December 28, 2014, meaning the entire period that this data covers, as well as a year and a half prior, there was a significant war occuring in this country.
+
+This connects to ideas about the inclusion criteria, how do we differentiate incidents that are clearly terrorism from those that are just part of a larger war? What is the relationship between these wars and the number of incidents? Are they causing them to happen (as when there is less central government and groups are using terrorism as a way to try to gain control in the vacume) or are the incidents causing the wars to happen (as when the United States invades Afghanistan because of the connection to 9/11). Seems like the easiest is answer is that these are both true.
+
+[insert more on background data; would be helpful to integrate that data with the terrorism data; would expand the possibilities]
+
+# Most incidents do not result in kills, if they do the number is small
+The values of the three kills measures (i.e., total kills, US kills, and terrorist kills) included non-integer values in some cases. The GTD describes these as from cases where the number of kills was unclear and they averaged them from sources. I looked at several examples of this and chose to round them.
+
+Counts of zero-kill cases are quite high and give the spiked, left portion of the distributions for the three values of kills. Roughly 45% of the incidents from 2006 to 2013 have no kills. Nearly all of the incidents result is zero kills of US citizens, which is also the case for kills of terrorists. In other words, in many cases no terrorists are killed. Max values are 250, 13, and 70 for the three measures. The total number of kills from all incidents are 59.1K, 151, and 5.3K. This overall ratio of roughly 10 kills per terrorist kill shows up. The mean number of kills per incident is roughly 2, 0.005, and 0.18. The distributions for kills are very clearly not Gaussian. They show large values of skewness and kurtosis for all three measures. Proptions for 0 kill, 1-5 kill, and >5 kill are roughly: 46%, 46%, and 8%, showing that in nearly all cases the number of kills is small.
+
+[insert 03-002-02-001.pdf]
+
+I haven't explored effects of time in great detail, but there seem to be some effects there. All three measures of kills seem to show a trend that weekend days show higher numbers of kills, with Saturday leading Friday. It's not clear whether this is being carried by some other variable(s), something that would need to be checked. If this effect is real does it relate to there being more people active on weekend days? Does it apply in all cases? What do the exceptions (high kill weekday incidents) look like? I haven't checked other time measures as much, but looked at week of the year quickly and there could be effects there as well. The dataset doesn't have information on the times or durations of the attacks, although that could show interesting effects as well.
+
+# Target type summary
+
+# Attack type summary
+
+# Weapon type summary
+
+# Issues with number of prepretators
+
+# Number of kills summary
+
+
+# Effects of time would depend on culture
+Is the frequency of attacks systematically related to standard organization levels of time (i.e., year, month, week, day)? Maybe kidnappings are more likely towards the start of months, whereas assinations are more likely in fall (in the Northern Hemisphere). Since most of the attacks occur in South Asia or the Middle East, Friday (day of rest) might be a more important day of the week than others, but would attacks be related to it in some way. All those kinds of things would need to be informed further and given the right contexts by studying these societies, but at least the analysis can be a guide. Another option is to subset the data, such as only those incidents in India, or only those in South India, etc., as it may be really difficult to say anything about this with respect to all incidents. Time would seem to almost certainly have different meanings depending on what culture it's applying to. There is a general thing that applies here, as well, that each of these would need to take place in the context of different cultures and societies, or even mixtures of them, as when a group from Pakistan attacks India. 
+
+
+There is some decline in incidents in early months. Is that real? It could be something related to winter in the north hemisphere, and those months people are just less active. Could also help to know what they mean in terms of the life of peple in these countries. Are they something important in the context of their traditions or not? Related point, it would help to know more about holidays. Of course, these may have from country to country, but also be systematic (e.g., all muslism countries will celebrate Ramadan). Can something about said about those dates in particular? Do incidents increase or decrease in frequency? Is there specifci kinds of effects relating to specific holidays, such as violence of a certain kind increasing around one holiday in one place.
