@@ -7,7 +7,9 @@
 # install.packages("MASS")
 # install.packages("vcd")
 # install.packages("prettyR")
+# install.packages("descr")
 library(dplyr)
+library(plyr)
 library(e1071)
 library(pastecs)
 library(ggplot2)
@@ -16,6 +18,8 @@ library(arules)
 library(MASS)
 library(vcd)
 library(prettyR)
+library(data.table)
+library(descr)
 
 #' Get the selected data, saved in 02-selection.R
 data <- readRDS("data.select.rds")
@@ -194,7 +198,7 @@ path.output <- "/Users/jameshedges/Documents/Projects/terrorism/output"
 # # 03-003 top 100 incidents ------------------------------------------------
 # 
 #' Top 107 incidents in terms number of kills (includes ties)
-data.100 <- top_n(data, 100, nkill)
+# data.100 <- top_n(data, 100, nkill)
 # 
 # summary(data.100)
 # #' (1) 10 of the 107 incidents beyond 24 hours; not sure what the ratio for this would be for the entire dataset, but it could be an interesting thing to check; probably wouldn't be that surprising that this would be predictive of kills
@@ -209,49 +213,82 @@ data.100 <- top_n(data, 100, nkill)
 # #' (10) number of perpetrators is problematic considering it is often not recorded, 38 out of 107 are not recorded; 23.8K of these in the overall dataset; what to do with them; could either do the models without it, or do the models on just those with it, or both
 # #' (11) much higher proportion are claimed than in the overall dataset; ~42% are claimed in the top 100, vs 12.6% in the overall dataset
 # #' (12) 81% of these are explosives/bombs attacks; next nearest is firearm attacks with ~15%
+# 
+# #' Plot distribution of kills for these incidents
+# ggplot(stack(data.100[, "nkill"]),
+#        aes(x=values)) +
+#   geom_density(aes(group=ind, colour=ind, fill=ind), alpha=0.5) +
+#   geom_rug(sides="b", col="red", alpha=.25) +
+#   xlim(0, 300) +
+#   labs(x="kill count") +
+#   ggtitle('Top 107 incidents from 2006-2013 [03-003-01-001]') +
+#   theme(legend.title=element_blank()) +
+#   theme(panel.background = element_rect(fill = '#fbf9ea'))
+# ggsave("03-003-01-001.pdf",
+#        path=path.output,
+#        units="in",
+#        width=5,
+#        height=6.5)
+# 
+# #' Table of years
+# table(data.100$iyear)
+# #' (1) curious property of 2006 that only 1 incident in this set from there
+# #' (2) even and high representation 2007-2011, then a down year and back up higher
+# 
+# #' Plots of year by kills for top 107 and colored by a particular variable
+# fig.name.pre <- "03-003-03"
+# vars <- c(
+#   "extended",
+#   "country",
+#   "region",
+#   "multiple",
+#   "suicide",
+#   "attacktype1",
+#   "targtype1",
+#   "natlty1",
+#   "claimed",
+#   "weaptype1"
+# )
+# for (i in vars) {
+#   print(ggplot(arrange_(data.100, i),
+#                aes(x=factor(iyear), y=nkill, fill=get(i))) +
+#           geom_bar(stat="identity") +
+#           labs(x="year", y="kills") +
+#           ggtitle('top 107 incidents from 2006-2013 by kills') +
+#           theme(panel.background=element_rect(fill='#fbf9ea')))
+#   fig.name <- paste(paste(fig.name.pre, toupper(i), sep="-"), "pdf", sep=".")
+#   ggsave(fig.name, path=path.output, units="in", width=5, height=6.5)
+# }
+# #' (1) XXX ADD SUMMARY
+# 
+# #' Top countries in the top 100
+# arrange(
+#   ddply(data.100,
+#         "country",
+#         summarize,
+#         freq=length(country)/nrow(data.100)),
+#   desc(freq))
+# #' (1) XXX ADD SUMMARY
 
-#' Plot distribution of kills for these incidents
-ggplot(stack(data.100[, "nkill"]),
-       aes(x=values)) +
-  geom_density(aes(group=ind, colour=ind, fill=ind), alpha=0.5) +
-  geom_rug(sides="b", col="red", alpha=.25) +
-  xlim(0, 300) +
-  labs(x="kill count") +
-  ggtitle('Top 107 incidents from 2006-2013 [03-003-01-001]') +
-  theme(legend.title=element_blank()) +
-  theme(panel.background = element_rect(fill = '#fbf9ea'))
-ggsave("03-003-01-001.pdf",
-       path=path.output,
-       units="in",
-       width=5,
-       height=6.5)
-
-#' Table of years
-table(data.100$iyear)
-#' (1) curious property of 2006 that only 1 incident in this set from there
-#' (2) even and high representation 2007-2011, then a down year and back up higher
-
-#' Plots of year by kills for top 107 and colored by a particular variable
-fig.name.pre <- "03-003-03"
-vars <- c(
-  "extended",
-  "country",
-  "region",
-  "multiple",
-  "suicide",
-  "attacktype1",
-  "targtype1",
-  "natlty1",
-  "claimed",
-  "weaptype1"
+#' Crosstabs of subset of predictors
+fig.name.pre <- "03-003-05"
+vars.crosstab <- list(
+  c("targtype1", "region"),
+  c("attacktype1", "suicide"),
+  c("region", "suicide"),
+  c("attacktype1", "weaptype1"),
+  c("region", "attacktype1")
 )
-for (i in vars) {
-  print(ggplot(arrange_(data.100, i),
-               aes(x=factor(iyear), y=nkill, fill=get(i))) +
-          geom_bar(stat="identity") +
-          labs(x="year", y="kills") +
-          ggtitle('top 107 incidents from 2006-2013 by kills') +
-          theme(panel.background=element_rect(fill='#fbf9ea')))
-  fig.name <- paste(paste(fig.name.pre, toupper(i), sep="-"), "pdf", sep=".")
-  ggsave(fig.name, path=path.output, units="in", width=5, height=6.5)
+for (i in vars.crosstab) {
+  fig.name <- paste(path.output,
+                    paste(
+                      paste(fig.name.pre,
+                            paste(toupper(i), collapse="-"), sep="-"),
+                      "pdf", sep="."),
+                    sep="/")
+  pdf(file=fig.name)
+  crosstab(data[[i[[1]]]], data[[i[[2]]]],
+           xlab=i[[1]], ylab=i[[2]])
+  dev.off()
 }
+#' (1) XXX ADD SUMMARY
