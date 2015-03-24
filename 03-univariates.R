@@ -1,3 +1,5 @@
+# top ---------------------------------------------------------------------
+
 # install.packages("dplyr")
 # install.packages("plyr")
 # install.packages("e1071")
@@ -24,12 +26,12 @@ library(data.table)
 library(descr)
 
 #' Get the selected data, saved in 02-selection.R
-data <- readRDS("data.select.rds")
+data <- readRDS("data.rds")
 
 #' Set output path
 path.output <- "/Users/jameshedges/Documents/Projects/terrorism/output"
 
-# 03-001 - summary stats on everything ------------------------------------
+# 03-003-01-summary -------------------------------------------------------
 
 summary(data)
 #' (1) mean year is 2011, slightly forward from center, but close
@@ -82,7 +84,7 @@ summary(data)
 #' (16) number of terrorist kills is 0.18 mean, with positive skew, and max of
 #' 70
 
-# 03-002 summary of kills -------------------------------------------------
+# 03-003-02-kills ---------------------------------------------------------
 
 #' Response variables are numeric values of total kilss, US kills, and terrorist
 #' kills
@@ -114,15 +116,8 @@ stat.desc(data[, col.kills])
 #' because of extended right tail
 
 #' Skew and kurtosis of kills variables
-fun.skew.kurt <- function(x) {
-  c(
-    skewness = skewness(x), 
-    kurtosis = kurtosis(x)
-  )
-}
-sapply(
-  data[, col.kills],
-  fun.skew.kurt)
+fun.skew.kurt <- function(x) {c(skewness = skewness(x), kurtosis = kurtosis(x))}
+sapply(data[, col.kills], fun.skew.kurt)
 #' (1) very clear that these distributions are not symmetrical
 #' (2) value of skewness is quite large, and especially large for nkillsus
 #' the distribution for number of US kills is especially asymmetrical, with
@@ -131,8 +126,7 @@ sapply(
 
 #' Density plot of three kill measures
 #' (1) http://www.color-hex.com/color/fbf9ea
-ggplot(stack(data[, col.kills]),
-       aes(x=values)) +
+ggplot(stack(data[, col.kills]), aes(x=values)) +
   geom_density(aes(group=ind, colour=ind, fill=ind), alpha=0.5) +
   xlim(0, 10.5) +
   labs(x="kill count") +
@@ -160,12 +154,11 @@ ggsave("03-002-02-001.pdf",
 #' (biii) >5
 
 #' Relationship between dates and kills
-dates <- as.Date(
-  paste(
-    as.character(data$iyear),
-    as.character(data$imonth),
-    as.character(data$iday),
-    sep="/"),
+dates <- as.Date(paste(
+  as.character(data$iyear),
+  as.character(data$imonth),
+  as.character(data$iday),
+  sep="/"),
   format="%Y/%m/%d"
 )
 data <- mutate(data, dates=dates)
@@ -196,89 +189,84 @@ data <- mutate(data, ind.nkill=findInterval(data$nkill, c(0, 1, 6, 251)))
 #' 13.2K ind=2 (roughly 45% 1-5kill incidents)
 #' 2.4K ind=3 (roughly 8% >5kill incidents)
 
-#' Make outcome variables, based on nkill
-ind.nkill.gt0 <- data$ind.nkill!=1
-y1.nkill.gt0 <- as.numeric(ind.nkill.gt0)
-data <- mutate(data, y1.nkill.gt0=y1.nkill.gt0)
-nkill.log <- log(as.numeric(unlist(data[which(ind.nkill.gt0), "nkill"])))
-y2.nkill.log <- rep(NA, length(ind.nkill.gt0))
-y2.nkill.log <- replace(y2.nkill.log, which(ind.nkill.gt0), nkill.log)
-data <- mutate(data, y2.nkill.log=y2.nkill.log)
+# 03-003-03-when ----------------------------------------------------------
 
-# # 03-003 top 100 incidents ------------------------------------------------
-# 
 #' Top 107 incidents in terms number of kills (includes ties)
-# data.100 <- top_n(data, 100, nkill)
-# 
-# summary(data.100)
-# #' (1) 10 of the 107 incidents beyond 24 hours; not sure what the ratio for this would be for the entire dataset, but it could be an interesting thing to check; probably wouldn't be that surprising that this would be predictive of kills
-# #' (2) top countries: Iraq (95) with 37 incidents; Pakistan (153) with 31 incidents; and Afghanistan (4) with 7; not surprising and basically reflects what we see in the dataset overall
-# #' (3) top regions: Middle East & North Africa (10) with 49; South Asia (6) with 41; and Sub-Saharan Africa (11) with 15. Note that there is 1 incident for Western Europ and 0 incidents for North America.
-# #' (4) consider country and region has being colinear, with one derived from the other; what's the right thing to do there at the point of the model; is one more helpful in terms of prediction? which should we let go of? how will these show up as such?
-# #' (5) another interesting variable in multiple; categorical that gives whether the incident was part of multiple incidents or not; here ~1:10 is
-# #' (6) ~63% of these are suicide attacks; percentage is much higher than for the entire set of incidents; this seems like it will be highly predictive
-# #' (7) attack types are nearly all bombing/explosion, ~77 percent; could make feature out of suicide bombings; also note that this variable may be highly colinear with weaptype1 (type of weapon)
-# #' (8) 47% on private citizens and property, these are public areas including busy intersections, etc.; doesn't include restaurants and movie theaters, which are counted as business; roughly equal amounts in 15,2,1,3: religious figures/institutions; government (general); business; and police
-# #' (9) nationality of targets is primarily Iraqi or Pakistani
-# #' (10) number of perpetrators is problematic considering it is often not recorded, 38 out of 107 are not recorded; 23.8K of these in the overall dataset; what to do with them; could either do the models without it, or do the models on just those with it, or both
-# #' (11) much higher proportion are claimed than in the overall dataset; ~42% are claimed in the top 100, vs 12.6% in the overall dataset
-# #' (12) 81% of these are explosives/bombs attacks; next nearest is firearm attacks with ~15%
-# 
-# #' Plot distribution of kills for these incidents
-# ggplot(stack(data.100[, "nkill"]),
-#        aes(x=values)) +
-#   geom_density(aes(group=ind, colour=ind, fill=ind), alpha=0.5) +
-#   geom_rug(sides="b", col="red", alpha=.25) +
-#   xlim(0, 300) +
-#   labs(x="kill count") +
-#   ggtitle('Top 107 incidents from 2006-2013 [03-003-01-001]') +
-#   theme(legend.title=element_blank()) +
-#   theme(panel.background = element_rect(fill = '#fbf9ea'))
-# ggsave("03-003-01-001.pdf",
-#        path=path.output,
-#        units="in",
-#        width=5,
-#        height=6.5)
-# 
-# #' Table of years
-# table(data.100$iyear)
-# #' (1) curious property of 2006 that only 1 incident in this set from there
-# #' (2) even and high representation 2007-2011, then a down year and back up higher
-# 
-# #' Plots of year by kills for top 107 and colored by a particular variable
-# fig.name.pre <- "03-003-03"
-# vars <- c(
-#   "extended",
-#   "country",
-#   "region",
-#   "multiple",
-#   "suicide",
-#   "attacktype1",
-#   "targtype1",
-#   "natlty1",
-#   "claimed",
-#   "weaptype1"
-# )
-# for (i in vars) {
-#   print(ggplot(arrange_(data.100, i),
-#                aes(x=factor(iyear), y=nkill, fill=get(i))) +
-#           geom_bar(stat="identity") +
-#           labs(x="year", y="kills") +
-#           ggtitle('top 107 incidents from 2006-2013 by kills') +
-#           theme(panel.background=element_rect(fill='#fbf9ea')))
-#   fig.name <- paste(paste(fig.name.pre, toupper(i), sep="-"), "pdf", sep=".")
-#   ggsave(fig.name, path=path.output, units="in", width=5, height=6.5)
-# }
-# #' (1) XXX ADD SUMMARY
-# 
-# #' Top countries in the top 100
-# arrange(
-#   ddply(data.100,
-#         "country",
-#         summarize,
-#         freq=length(country)/nrow(data.100)),
-#   desc(freq))
-# #' (1) XXX ADD SUMMARY
+data.100 <- top_n(data, 100, nkill)
+
+summary(data.100)
+#' (1) 10 of the 107 incidents beyond 24 hours; not sure what the ratio for this would be for the entire dataset, but it could be an interesting thing to check; probably wouldn't be that surprising that this would be predictive of kills
+#' (2) top countries: Iraq (95) with 37 incidents; Pakistan (153) with 31 incidents; and Afghanistan (4) with 7; not surprising and basically reflects what we see in the dataset overall
+#' (3) top regions: Middle East & North Africa (10) with 49; South Asia (6) with 41; and Sub-Saharan Africa (11) with 15. Note that there is 1 incident for Western Europ and 0 incidents for North America.
+#' (4) consider country and region has being colinear, with one derived from the other; what's the right thing to do there at the point of the model; is one more helpful in terms of prediction? which should we let go of? how will these show up as such?
+#' (5) another interesting variable in multiple; categorical that gives whether the incident was part of multiple incidents or not; here ~1:10 is
+#' (6) ~63% of these are suicide attacks; percentage is much higher than for the entire set of incidents; this seems like it will be highly predictive
+#' (7) attack types are nearly all bombing/explosion, ~77 percent; could make feature out of suicide bombings; also note that this variable may be highly colinear with weaptype1 (type of weapon)
+#' (8) 47% on private citizens and property, these are public areas including busy intersections, etc.; doesn't include restaurants and movie theaters, which are counted as business; roughly equal amounts in 15,2,1,3: religious figures/institutions; government (general); business; and police
+#' (9) nationality of targets is primarily Iraqi or Pakistani
+#' (10) number of perpetrators is problematic considering it is often not recorded, 38 out of 107 are not recorded; 23.8K of these in the overall dataset; what to do with them; could either do the models without it, or do the models on just those with it, or both
+#' (11) much higher proportion are claimed than in the overall dataset; ~42% are claimed in the top 100, vs 12.6% in the overall dataset
+#' (12) 81% of these are explosives/bombs attacks; next nearest is firearm attacks with ~15%
+
+#' Plot distribution of kills for these incidents
+ggplot(stack(data.100[, "nkill"]),
+       aes(x=values)) +
+  geom_density(aes(group=ind, colour=ind, fill=ind), alpha=0.5) +
+  geom_rug(sides="b", col="red", alpha=.25) +
+  xlim(0, 300) +
+  labs(x="kill count") +
+  ggtitle('Top 107 incidents from 2006-2013 [03-003-01-001]') +
+  theme(legend.title=element_blank()) +
+  theme(panel.background = element_rect(fill = '#fbf9ea'))
+ggsave("03-003-01-001.pdf",
+       path=path.output,
+       units="in",
+       width=5,
+       height=6.5)
+
+#' Table of years
+table(data.100$iyear)
+#' (1) curious property of 2006 that only 1 incident in this set from there
+#' (2) even and high representation 2007-2011, then a down year and back up higher
+
+#' Plots of year by kills for top 107 and colored by a particular variable
+fig.name.pre <- "03-003-03"
+vars <- c(
+  "extended",
+  "country",
+  "region",
+  "multiple",
+  "suicide",
+  "attacktype1",
+  "targtype1",
+  "natlty1",
+  "claimed",
+  "weaptype1"
+)
+for (i in vars) {
+  print(ggplot(arrange_(data.100, i),
+               aes(x=factor(iyear), y=nkill, fill=get(i))) +
+          geom_bar(stat="identity") +
+          labs(x="year", y="kills") +
+          ggtitle('top 107 incidents from 2006-2013 by kills') +
+          theme(panel.background=element_rect(fill='#fbf9ea')))
+  fig.name <- paste(paste(fig.name.pre, toupper(i), sep="-"), "pdf", sep=".")
+  ggsave(fig.name, path=path.output, units="in", width=5, height=6.5)
+}
+#' (1) XXX ADD SUMMARY
+
+# 03-003-04-where ---------------------------------------------------------
+
+#' Top countries in the top 100
+arrange(
+  ddply(data.100,
+        "country",
+        summarize,
+        freq=length(country)/nrow(data.100)),
+  desc(freq))
+#' (1) XXX ADD SUMMARY
+
+# 03-003-05-crosstab ------------------------------------------------------
 
 #' Crosstabs of subset of predictors
 fig.name.pre <- "03-003-05"
@@ -302,3 +290,8 @@ for (i in vars.crosstab) {
   dev.off()
 }
 #' (1) XXX ADD SUMMARY
+
+# bottom ------------------------------------------------------------------
+
+#' Save the data
+saveRDS(data, "data.rds")

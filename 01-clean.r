@@ -12,15 +12,15 @@ names(data) <- tolower(gsub("_", ".", names(data)))
 #' Make smaller data; keep as tbl class
 data <- tbl_df(
   data[, c(
-    "eventid",      #' 1
-    "iyear",        #' 2
-    "imonth",       #' 3
-    "iday",         #' 4
-    "extended",     #' 5
-    "country",      #' 6
-    "region",       #' 7
-    "crit1",        #' 8
-    "crit2",        #' 9
+    "eventid",      #' 01
+    "iyear",        #' 02
+    "imonth",       #' 03
+    "iday",         #' 04
+    "extended",     #' 05
+    "country",      #' 06
+    "region",       #' 07
+    "crit1",        #' 08
+    "crit2",        #' 09
     "crit3",        #' 10
     "doubtterr",    #' 11
     "multiple",     #' 12
@@ -67,4 +67,5 @@ data <- data[complete.cases(data), ]
 saveRDS(data, "data.rds")
 
 #' Make data frame tbl of GTD codes
+#' use this for fixing labels in legends
 list.files(path="/Users/jameshedges/Documents/Projects/terrorism/terrorism")
