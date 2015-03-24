@@ -56,9 +56,9 @@ y2.nkill.log <-
 data <-
   mutate(data, y1.nkill.gt0=y1.nkill.gt0, y2.nkill.log=y2.nkill.log)
 
-# 04-001-02-plots 0/1 -----------------------------------------------------
+# 04-001-02-plots ---------------------------------------------------------
 
-#' Crosstabs of subset of predictors
+#' Mosaic plots to y1 (greater than 0 kills)
 fig.name.pre <- "04-001-02"
 vars.crosstab <- list(
   c("iyear", "y1.nkill.gt0"),
@@ -84,6 +84,30 @@ for (i in vars.crosstab) {
 }
 #' (1) XXX ADD SUMMARY
 
+#' Box plots to y2 (for gt0 kills, log(kills))
+fig.name.pre <- "04-001-02"
+vars.crosstab <- list(
+  c("iyear", "y2.nkill.log"),
+  c("extended", "y2.nkill.log"),
+  c("region", "y2.nkill.log"),
+  c("multiple", "y2.nkill.log"),
+  c("suicide", "y2.nkill.log"),
+  c("attacktype1", "y2.nkill.log"),
+  c("claimed", "y2.nkill.log"),
+  c("weaptype1", "y2.nkill.log")
+)
+for (i in vars.crosstab) {
+  fig.name <- paste(path.output,
+                    paste(
+                      paste(fig.name.pre,
+                            paste(toupper(i), collapse="-"), sep="-"),
+                      "pdf", sep="."),
+                    sep="/")
+  pdf(file=fig.name)
+  boxplot(get(i[[2]])~get(i[[1]]), data=data, xlab=i[[1]], ylab=i[[2]])
+  dev.off()
+}
+#' (1) XXX ADD SUMMARY
 
 # bottom ------------------------------------------------------------------
 
