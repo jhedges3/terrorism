@@ -1,4 +1,5 @@
 # install.packages("dplyr")
+# install.packages("plyr")
 # install.packages("e1071")
 # install.packages("pastecs")
 # install.packages("ggplot2")
@@ -7,6 +8,7 @@
 # install.packages("MASS")
 # install.packages("vcd")
 # install.packages("prettyR")
+# install.packages("data.table")
 # install.packages("descr")
 library(dplyr)
 library(plyr)
@@ -27,174 +29,182 @@ data <- readRDS("data.select.rds")
 #' Set output path
 path.output <- "/Users/jameshedges/Documents/Projects/terrorism/output"
 
-# # 03-001 - summary stats on everything ------------------------------------
-# 
-# summary(data)
-# #' (1) mean year is 2011, slightly forward from center, but close
-# #' (2) mongth is also sligthly forward shifted, with lower levels around 1st and
-# #' 2nd months of the year
-# #' (3) most incidents were not extended, only ab 900 out of ab 29k
-# 
-# #' (4) top five countries:
-# #' [1] (95) Iraq with 7.5K;
-# #' [2] (153) Pakistan with 5K;
-# #' [3] (4) Afghanistan with 3.2K;
-# #' [4] (92) India with 2.7K;
-# #' [5] (205) Thailand with 1.3K.
-# #' (5) top two regions:
-# #' [1] (6) South Asia with 11.8K;
-# #' [2] (10) Middle East and North Africa 10K;
-# 
-# #' (6) most are not part of multiple incidents, ab 4K vs. 25K
-# #' (7) most are not suicide 1.7K are vs. 27.4K are not
-# #' (8) top five attack types:
-# #' [1] (3) Kidnapping with 17.2K
-# #' [2] (2) Hijacking with 7.6K
-# #' [3] (7) Armed Assault with 1.7K
-# #' [4] (1) Assassination with 1.2K
-# #' [5] (6) Unkown with 1K
-# 
-# #' (9) top four target types:
-# #' [1] (14) Private Citizens & Property with 8.5K
-# #' [2] (3) Police with 5.4K
-# #' [3] (2) Government with 4.2K
-# #' [4] (1) Business with 2.9K
-# 
-# #' (10) top four nationality of target/victim:
-# #' [1] (95) Iraq with 7.4K
-# #' [2] (153) Pakistan with 4.9K
-# #' [3] (4) Afghanistan with 3.1K
-# #' [4] (92) India with 2.7K
-# #' (11) these are mirroring the country of the attacks
-# 
-# #' (12) number of perpretrators is unkown in many cases; will need to deal with
-# #' this separately
-# 
-# #' (13) top three weapon types:
-# #' [1] (6) Explosives/Bombs/Dynamite with 17.8K
-# #' [2] (5) Firearms with 9K
-# #' [3] (8) Incendiary with 1.6K
-# 
-# #' (14) number of kills is 2.03 mean, with positive skew, and max of 250
-# #' (15) number of US kills is 0.0052 mean, with positive skew, and max of 13
-# #' (16) number of terrorist kills is 0.18 mean, with positive skew, and max of
-# #' 70
-# 
-# # 03-002 summary of kills -------------------------------------------------
-# 
-# #' Response variables are numeric values of total kilss, US kills, and terrorist
-# #' kills
-# col.kills <- c("nkill", "nkillus", "nkillter")
-# 
-# #' Round kills
-# data[, col.kills] <- sapply(data[, col.kills], round)
-# 
-# #' Summary statistics of output variables
-# options(scipen=100)
-# options(digits=2)
-# stat.desc(data[, col.kills])
-# #' lots of important information here
-# #' (1) number of values is 29.2K, so that's current number of incidents
-# #' (2) null counts for the three: 13.5K, 29.1K, 26.6K
-# #' suprised by how many 0 kill incidents there are for the terrorists
-# #' many incidents don't result in any kills even tho they're considered
-# #' a success
-# #' nearly all incidents do not result in kills of US citizens
-# #' (3) max values for the three 250, 13, and 70
-# #' these seem reasonable (not too high), might be much lower than
-# #' people expect
-# #' (4) sum is 59.1K for all, 151 for US, and 5.3K for terrorist kills
-# #' these seem very low, especially for US43
-# #' number of US deaths in motor vehicle accidents
-# #' in roughly the same period 298K
-# #' (5) mean number of kills per incident: 2.027, 0.005, 0.18
-# #' (6) standard deviations are quite large, 5.8, 0.16, 1.18
-# #' because of extended right tail
-# 
-# #' Skew and kurtosis of kills variables
-# fun.skew.kurt <- function(x) {
-#   c(
-#     skewness = skewness(x), 
-#     kurtosis = kurtosis(x)
-#   )
-# }
-# sapply(
-#   data[, col.kills],
-#   fun.skew.kurt)
-# #' (1) very clear that these distributions are not symmetrical
-# #' (2) value of skewness is quite large, and especially large for nkillsus
-# #' the distribution for number of US kills is especially asymmetrical, with
-# #' skewness value of 54
-# #' (3) these distributions are very clearly not Gaussian
-# 
-# #' Density plot of three kill measures
-# #' (1) http://www.color-hex.com/color/fbf9ea
-# ggplot(stack(data[, col.kills]),
-#        aes(x=values)) +
-#   geom_density(aes(group=ind, colour=ind, fill=ind), alpha=0.5) +
-#   xlim(0, 10.5) +
-#   labs(x="kill count") +
-#   ggtitle('All incidents from 2006-2013 [03-002-02-001]') +
-#   theme(legend.title=element_blank()) +
-#   theme(panel.background = element_rect(fill = '#fbf9ea'))
-# ggsave("03-002-02-001.pdf",
-#        path=path.output,
-#        units="in",
-#        width=5,
-#        height=6.5)
-# #' (1) shows what we expect in terms very low US kills
-# #' and quite a bit higher for other measures of overall kills
-# #' and terrorist kills
-# #' (2) shape is very highly skewed, resulting in part from high
-# #' proportion of 0-kill incidents
-# #' (3) values are quantized of course (can't have fractions of kills)
-# #' (4) there are slightly higher overall total kills than kills of terrorists
-# #' and most of the incidents fall within the values of 0-5 or even 0-2
-# #' (5) probably helpful to make logical inds on these
-# #' (ai) 0
-# #' (aii) >0
-# #' (bi) 0
-# #' (bii) 1-5
-# #' (biii) >5
-# 
-# #' Relationship between dates and kills
-# dates <- as.Date(
-#   paste(
-#     as.character(data$iyear),
-#     as.character(data$imonth),
-#     as.character(data$iday),
-#     sep="/"),
-#   format="%Y/%m/%d"
-# )
-# data <- mutate(data, dates=dates)
-# data.tmp <- data[data$iday!=0,]
-# data.tmp %>%
-#   group_by(wday(data.tmp$dates)) %>%
-#   summarise(avg = mean(nkill)) %>%
-#   arrange(avg)
-# #' (1) seems like there is a relationship between kills and day of the week
-# #' days towards the end of the week have higher kills, with highest
-# #' usually coming on Saturday, followed by Friday
-# #' (2) effect probably applies for other measures as well,
-# #' such as for US kills and terrorist kills
-# #' (3) not clear if there are different attack types or weapon types going
-# #' with date, is the effect related to there being more attacks on these days
-# #' is reverse true that there are more 0-kill days for early days in the week
-# 
-# #' Kills indexing
-# data <- mutate(data,
-#                ind.nkill=findInterval(data$nkill, c(0, 1, 6, 251)))
-# #' (1) needed to check this quite a bit and adjust; important to consider
-# #' that the data were rounded before this
-# #' (2)
-# #' 0 kill incidents -> ind=1
-# #' 1-5 kill incidents -> ind=2
-# #' >5 kill incidents -> ind=3
-# #' (3) counts of these match with above
-# #' 13.5K ind=1 (roughly 45% 0-kill incidents)
-# #' 13.2K ind=2 (roughly 45% 1-5kill incidents)
-# #' 2.4K ind=3 (roughly 8% >5kill incidents)
-# 
+# 03-001 - summary stats on everything ------------------------------------
+
+summary(data)
+#' (1) mean year is 2011, slightly forward from center, but close
+#' (2) mongth is also sligthly forward shifted, with lower levels around 1st and
+#' 2nd months of the year
+#' (3) most incidents were not extended, only ab 900 out of ab 29k
+
+#' (4) top five countries:
+#' [1] (95) Iraq with 7.5K;
+#' [2] (153) Pakistan with 5K;
+#' [3] (4) Afghanistan with 3.2K;
+#' [4] (92) India with 2.7K;
+#' [5] (205) Thailand with 1.3K.
+#' (5) top two regions:
+#' [1] (6) South Asia with 11.8K;
+#' [2] (10) Middle East and North Africa 10K;
+
+#' (6) most are not part of multiple incidents, ab 4K vs. 25K
+#' (7) most are not suicide 1.7K are vs. 27.4K are not
+#' (8) top five attack types:
+#' [1] (3) Kidnapping with 17.2K
+#' [2] (2) Hijacking with 7.6K
+#' [3] (7) Armed Assault with 1.7K
+#' [4] (1) Assassination with 1.2K
+#' [5] (6) Unkown with 1K
+
+#' (9) top four target types:
+#' [1] (14) Private Citizens & Property with 8.5K
+#' [2] (3) Police with 5.4K
+#' [3] (2) Government with 4.2K
+#' [4] (1) Business with 2.9K
+
+#' (10) top four nationality of target/victim:
+#' [1] (95) Iraq with 7.4K
+#' [2] (153) Pakistan with 4.9K
+#' [3] (4) Afghanistan with 3.1K
+#' [4] (92) India with 2.7K
+#' (11) these are mirroring the country of the attacks
+
+#' (12) number of perpretrators is unkown in many cases; will need to deal with
+#' this separately
+
+#' (13) top three weapon types:
+#' [1] (6) Explosives/Bombs/Dynamite with 17.8K
+#' [2] (5) Firearms with 9K
+#' [3] (8) Incendiary with 1.6K
+
+#' (14) number of kills is 2.03 mean, with positive skew, and max of 250
+#' (15) number of US kills is 0.0052 mean, with positive skew, and max of 13
+#' (16) number of terrorist kills is 0.18 mean, with positive skew, and max of
+#' 70
+
+# 03-002 summary of kills -------------------------------------------------
+
+#' Response variables are numeric values of total kilss, US kills, and terrorist
+#' kills
+col.kills <- c("nkill", "nkillus", "nkillter")
+
+#' Round kills
+data[, col.kills] <- sapply(data[, col.kills], round)
+
+#' Summary statistics of output variables
+options(scipen=100)
+options(digits=2)
+stat.desc(data[, col.kills])
+#' lots of important information here
+#' (1) number of values is 29.2K, so that's current number of incidents
+#' (2) null counts for the three: 13.5K, 29.1K, 26.6K
+#' suprised by how many 0 kill incidents there are for the terrorists
+#' many incidents don't result in any kills even tho they're considered
+#' a success
+#' nearly all incidents do not result in kills of US citizens
+#' (3) max values for the three 250, 13, and 70
+#' these seem reasonable (not too high), might be much lower than
+#' people expect
+#' (4) sum is 59.1K for all, 151 for US, and 5.3K for terrorist kills
+#' these seem very low, especially for US43
+#' number of US deaths in motor vehicle accidents
+#' in roughly the same period 298K
+#' (5) mean number of kills per incident: 2.027, 0.005, 0.18
+#' (6) standard deviations are quite large, 5.8, 0.16, 1.18
+#' because of extended right tail
+
+#' Skew and kurtosis of kills variables
+fun.skew.kurt <- function(x) {
+  c(
+    skewness = skewness(x), 
+    kurtosis = kurtosis(x)
+  )
+}
+sapply(
+  data[, col.kills],
+  fun.skew.kurt)
+#' (1) very clear that these distributions are not symmetrical
+#' (2) value of skewness is quite large, and especially large for nkillsus
+#' the distribution for number of US kills is especially asymmetrical, with
+#' skewness value of 54
+#' (3) these distributions are very clearly not Gaussian
+
+#' Density plot of three kill measures
+#' (1) http://www.color-hex.com/color/fbf9ea
+ggplot(stack(data[, col.kills]),
+       aes(x=values)) +
+  geom_density(aes(group=ind, colour=ind, fill=ind), alpha=0.5) +
+  xlim(0, 10.5) +
+  labs(x="kill count") +
+  ggtitle('All incidents from 2006-2013 [03-002-02-001]') +
+  theme(legend.title=element_blank()) +
+  theme(panel.background = element_rect(fill = '#fbf9ea'))
+ggsave("03-002-02-001.pdf",
+       path=path.output,
+       units="in",
+       width=5,
+       height=6.5)
+#' (1) shows what we expect in terms very low US kills
+#' and quite a bit higher for other measures of overall kills
+#' and terrorist kills
+#' (2) shape is very highly skewed, resulting in part from high
+#' proportion of 0-kill incidents
+#' (3) values are quantized of course (can't have fractions of kills)
+#' (4) there are slightly higher overall total kills than kills of terrorists
+#' and most of the incidents fall within the values of 0-5 or even 0-2
+#' (5) probably helpful to make logical inds on these
+#' (ai) 0
+#' (aii) >0
+#' (bi) 0
+#' (bii) 1-5
+#' (biii) >5
+
+#' Relationship between dates and kills
+dates <- as.Date(
+  paste(
+    as.character(data$iyear),
+    as.character(data$imonth),
+    as.character(data$iday),
+    sep="/"),
+  format="%Y/%m/%d"
+)
+data <- mutate(data, dates=dates)
+data.tmp <- data[data$iday!=0,]
+data.tmp %>%
+  group_by(wday(data.tmp$dates)) %>%
+  summarise(avg = mean(nkill)) %>%
+  arrange(avg)
+#' (1) seems like there is a relationship between kills and day of the week
+#' days towards the end of the week have higher kills, with highest
+#' usually coming on Saturday, followed by Friday
+#' (2) effect probably applies for other measures as well,
+#' such as for US kills and terrorist kills
+#' (3) not clear if there are different attack types or weapon types going
+#' with date, is the effect related to there being more attacks on these days
+#' is reverse true that there are more 0-kill days for early days in the week
+
+#' Kills indexing
+data <- mutate(data, ind.nkill=findInterval(data$nkill, c(0, 1, 6, 251)))
+#' (1) needed to check this quite a bit and adjust; important to consider
+#' that the data were rounded before this
+#' (2)
+#' 0 kill incidents -> ind=1
+#' 1-5 kill incidents -> ind=2
+#' >5 kill incidents -> ind=3
+#' (3) counts of these match with above
+#' 13.5K ind=1 (roughly 45% 0-kill incidents)
+#' 13.2K ind=2 (roughly 45% 1-5kill incidents)
+#' 2.4K ind=3 (roughly 8% >5kill incidents)
+
+#' Make outcome variables, based on nkill
+ind.nkill.gt0 <- data$ind.nkill!=1
+y1.nkill.gt0 <- as.numeric(ind.nkill.gt0)
+data <- mutate(data, y1.nkill.gt0=y1.nkill.gt0)
+nkill.log <- log(as.numeric(unlist(data[which(ind.nkill.gt0), "nkill"])))
+y2.nkill.log <- rep(NA, length(ind.nkill.gt0))
+y2.nkill.log <- replace(y2.nkill.log, which(ind.nkill.gt0), nkill.log)
+data <- mutate(data, y2.nkill.log=y2.nkill.log)
+
 # # 03-003 top 100 incidents ------------------------------------------------
 # 
 #' Top 107 incidents in terms number of kills (includes ties)
