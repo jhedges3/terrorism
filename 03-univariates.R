@@ -243,17 +243,71 @@ vars <- c(
   "claimed",
   "weaptype1"
 )
-for (i in vars) {
-  print(ggplot(arrange_(data.100, i),
-               aes(x=factor(iyear), y=nkill, fill=get(i))) +
-          geom_bar(stat="identity") +
-          labs(x="year", y="kills") +
-          ggtitle('top 107 incidents from 2006-2013 by kills') +
-          theme(panel.background=element_rect(fill='#fbf9ea')))
+for (i in vars){
   fig.name <- paste(paste(fig.name.pre, toupper(i), sep="-"), "pdf", sep=".")
-  ggsave(fig.name, path=path.output, units="in", width=5, height=6.5)
+  if(i == "country"){
+    print(ggplot(arrange_(data.100, i),
+                 aes(x=factor(iyear), y=nkill, fill=get(i))) +
+            geom_bar(stat="identity") +
+            labs(x="year", y="kills") +
+            ggtitle('top 107 incidents from 2006-2013 by kills') +
+            theme(panel.background=element_rect(fill='#fbf9ea')) + 
+            scale_fill_discrete(name="",
+                                breaks=c("4", "6",
+                                         "41", "44",
+                                         "65", "92",
+                                         "95", "104",
+                                         "147", "151",
+                                         "153", "182",
+                                         "186", "195",
+                                         "200", "213",
+                                         "228", "229"),
+                                labels=c("Afghanistan", "Algeria",
+                                         "CAR","China",
+                                         "Ethiopia", "India",
+                                         "Iraq", "Kenya",
+                                         "Nigeria", "Norway",
+                                         "Pakistan", "Somalia",
+                                         "Sri Lanka", "Sudan",
+                                         "Syria", "Uganda",
+                                         "Yemen", "Congo")
+            )
+    )
+    ggsave(fig.name, path=path.output, units="in", width=6, height=6.5)
+  } else if(i == "region"){
+    print(ggplot(arrange_(data.100, i),
+                 aes(x=factor(iyear), y=nkill, fill=get(i))) +
+            geom_bar(stat="identity") +
+            labs(x="year", y="kills") +
+            ggtitle('top 107 incidents from 2006-2013 by kills') +
+            theme(panel.background=element_rect(fill='#fbf9ea')) + 
+            scale_fill_discrete(name="",
+                                breaks=c("4",
+                                         "6",
+                                         "8",
+                                         "10",
+                                         "11"),
+                                labels=c("East Asia",
+                                         "South Asia",
+                                         "Western Europe",
+                                         "Middle East & North Africa",
+                                         "Sub-Saharan Africa")
+            )
+    )
+    ggsave(fig.name, path=path.output, units="in", width=7, height=6.5)
+  } else{
+    print(ggplot(arrange_(data.100, i),
+                 aes(x=factor(iyear), y=nkill, fill=get(i))) +
+            geom_bar(stat="identity") +
+            labs(x="year", y="kills") +
+            ggtitle('top 107 incidents from 2006-2013 by kills') +
+            theme(panel.background=element_rect(fill='#fbf9ea')) + 
+            guides(fill=guide_legend(title=NULL)))
+    ggsave(fig.name, path=path.output, units="in", width=5, height=6.5)
+  }
 }
 #' (1) XXX ADD SUMMARY
+
 
 # 03-003-04-where ---------------------------------------------------------
 

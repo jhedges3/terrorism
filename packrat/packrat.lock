@@ -78,10 +78,27 @@ Version: 6.0-41
 Hash: 34824adecdb6f6228e3e68696f1c7dec
 Requires: BradleyTerry2, car, foreach, ggplot2, plyr, reshape2
 
+Package: chron
+Source: CRAN
+Version: 2.3-45
+Hash: 65cf73bf43c26a4578bb251499de38cd
+
 Package: colorspace
 Source: CRAN
 Version: 1.2-4
 Hash: b775bd08a10f968fef582304b7c3ab9c
+
+Package: data.table
+Source: CRAN
+Version: 1.9.4
+Hash: 905b6356d387a3a7e13ef62c4cf6f7e3
+Requires: chron, reshape2
+
+Package: descr
+Source: CRAN
+Version: 1.0.4
+Hash: 5094b722b2b877adc17512d0dd564fe5
+Requires: xtable
 
 Package: dichromat
 Source: CRAN
@@ -310,6 +327,11 @@ Source: CRAN
 Version: 0.6.1
 Hash: 3601d069f9b45b0d9a39b6954f4fed48
 Requires: rJava
+
+Package: xtable
+Source: CRAN
+Version: 1.7-4
+Hash: 7b30b5ca6c7ae80c4f916502e3ad0237
 
 Package: yaml
 Source: CRAN

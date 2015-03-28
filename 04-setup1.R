@@ -14,18 +14,20 @@ rm(list = ls())
 # install.packages("prettyR")
 # install.packages("data.table")
 # install.packages("descr")
+# install.packages("caret")
 library(dplyr)
 library(plyr)
-library(e1071)
-library(pastecs)
-library(ggplot2)
-library(lubridate)
-library(arules)
-library(MASS)
-library(vcd)
-library(prettyR)
-library(data.table)
-library(descr)
+# library(e1071)
+# library(pastecs)
+# library(ggplot2)
+# library(lubridate)
+# library(arules)
+# library(MASS)
+# library(vcd)
+# library(prettyR)
+# library(data.table)
+# library(descr)
+library(caret)
 
 #' Get the selected data, saved in 02-selection.R
 data <- readRDS("data.rds")
@@ -71,16 +73,16 @@ vars.crosstab <- list(
   c("weaptype1", "y1.nkill.gt0")
 )
 for (i in vars.crosstab) {
-    fig.name <- paste(path.output,
-                      paste(
-                        paste(fig.name.pre,
-                              paste(toupper(i), collapse="-"), sep="-"),
-                        "pdf", sep="."),
-                      sep="/")
-    pdf(file=fig.name)
+  fig.name <- paste(path.output,
+                    paste(
+                      paste(fig.name.pre,
+                            paste(toupper(i), collapse="-"), sep="-"),
+                      "pdf", sep="."),
+                    sep="/")
+  pdf(file=fig.name)
   crosstab(data[[i[[1]]]], data[[i[[2]]]],
            xlab=i[[1]], ylab=i[[2]])
-    dev.off()
+  dev.off()
 }
 #' (1) XXX ADD SUMMARY
 
@@ -108,6 +110,27 @@ for (i in vars.crosstab) {
   dev.off()
 }
 #' (1) XXX ADD SUMMARY
+
+# 04-002-01-partition -----------------------------------------------------
+set.seed(3456)
+ind.train <- createDataPartition(data$y1.nkill.gt0, p=0.7, list=FALSE, times=1)
+head(ind.train)
+data.train <- data[ind.train,]
+data.test <- data[-ind.train,]
+
+foo <- data.train[1:15000,]
+foo <- data.train
+glm.out = glm(
+  y1.nkill.gt0 ~ 
+    extended +
+    region +
+    suicide +
+    attacktype1 +
+    claimed +
+    weaptype1,
+  family=binomial(logit), data=foo)
+summary(glm.out)
+
 
 # bottom ------------------------------------------------------------------
 
