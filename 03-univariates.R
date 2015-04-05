@@ -86,7 +86,7 @@ summary(data)
 
 # 03-003-02-kills ---------------------------------------------------------
 
-#' Response variables are numeric values of total kilss, US kills, and terrorist
+#' Response variables are numeric values of total kilLs, US kills, and terrorist
 #' kills
 col.kills <- c("nkill", "nkillus", "nkillter")
 

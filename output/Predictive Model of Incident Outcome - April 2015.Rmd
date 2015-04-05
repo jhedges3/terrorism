@@ -1,0 +1,686 @@
+---
+title: 'Terrorism Project: Predictive Model of Incident Outcome - April 2015'
+author: "James Hedges"
+date: "April 2, 2015"
+output: html_document
+---
+
+![Source: Wikipedia>Terrorism>Mass media [image and caption]](/Users/jameshedges/Documents/Projects/terrorism/output/Plakat_La_Terroriste.jpg)
+
+###### A 1910 poster of a member of the Combat Organization of the Polish Socialist Party throwing a bomb at a Russian official's car on the streets of Warsaw. (Source: Wikipedia>Terrorism>Mass media [image and caption])
+
+# Objective: predict if casualties will occur
+My goal for this portion of this project is to predict whether a terrorist incident will result in casualties based on the characteristics of the incident. While determining which characteristics to consider is an objective of the project, the list of characteristics to consider could include such things as the geographic region in which the incident took place, the number of perpetrators involved in the attack, and the type of weapon used. I would like to get a better understanding of which characteristics are most related to increases in the probability that casualties will occur and vice-versa.
+
+This model can be thought of as a starting point in data-derived risk assessments of global terrorist activity, in addition to other, more general, violent crime. The work could have utility in allowing for better resource allocation, such as in determining how much security should attend a public political event in a given country. It could likewise go towards reducing the effectiveness of terrorist activity. Terrorism is important to modern societies in that affects personal safety, impacts civil liberties, alters public perception of issues and organizations, and may play a determinative role in defining the relations between nations.
+
+![Source: http://www.start.umd.edu](/Users/jameshedges/Documents/Projects/terrorism/output/screenshot.png)
+
+# Dataset: Global Terrorism Database (GTD)
+The Global Terrorism Database (GTD) includes incidents of terrorism from 1970 onward and is maintained by the National Consortium for the Study of Terrorism and Responses to Terrorism (START) at the University of Maryland, College Park. The database was "developed to be a comprehensive, methodologically robust set of longitudinal data on incidents of domestic and international terrorism.” It was designed to be used for the latest quantitative analytic techniques used in social and computational sciences, and has been used in academic studies of the amount and types of terrorism. Scientist and author, Steven Pinker, referred to the database in his book, The Better Angels of Our Nature, as “the major publicly available dataset on terrorist attacks."
+
+# Definition: (1) has goal; (2) has message; (3) isn't war
+There is no universally accepted definition of terrorism, but for our purposes we can consider the following. Dictionary.com gives: "the use of violence and threats to intimidate or coerce, especially for political purposes.” A more specific definition from Wikipedia.org: “violent acts (or the threat of violent acts) intended to create fear (terror), perpetrated for a religious, political, or ideological goal, and which deliberately target or disregard the safety of non-combatants (e.g., neutral military personnel or civilians)."
+
+GTD definition: (1) must be intentional; (2) must entail some level of violence or threat of violence; (3) perpetrators must be sub-national actors. Related points follow in terms of the inclusion criteria, of which two of the following three must be met: (1) must be "aimed at attaining a political, economic, religious, or social goal"; (2) must be "evidence of an intention to coerce, intimidate, or convey some other message to a larger audience (or audiences) than the immediate victims”; (3) must be “outside the context of legitimate warfare activities."
+
+# Sequence 1: getting, cleaning, selecting data
+```{r eval=FALSE}
+url <- "http://apps.start.umd.edu/gtd/downloads/dataset/GTD_0814dist.zip"
+download(url, dest="./data/GTD_0814dist.zip", mode="wb")
+unzip("./data/GTD_0814dist.zip", exdir="./data")
+list.files("./data")
+```
+
+```{r eval=FALSE}
+#' Load data for 2006 to 2013; going to focus on these years
+data <- read.xlsx("./data/gtd_06to13_0814dist.xlsx")
+
+#' Change names so _'s go to .'s and all lowercase
+names(data) <- tolower(gsub("_", ".", names(data)))
+
+#' Make smaller data; keep as tbl class
+data <- tbl_df(
+  data[, c(
+    "eventid",      #' 01
+    "iyear",        #' 02
+    "imonth",       #' 03
+    "iday",         #' 04
+    "extended",     #' 05
+    "country",      #' 06
+    "region",       #' 07
+    "crit1",        #' 08
+    "crit2",        #' 09
+    "crit3",        #' 10
+    "doubtterr",    #' 11
+    "multiple",     #' 12
+    "success",      #' 13
+    "suicide",      #' 14
+    "attacktype1",  #' 15
+    "targtype1",    #' 16
+    "natlty1",      #' 17
+    "nperps",       #' 18
+    "claimed",      #' 19
+    "weaptype1",    #' 20
+    "nkill",        #' 21
+    "nkillus",      #' 22
+    "nkillter"      #' 23
+  )])
+
+#' Remove rows with NAs
+data <- data[complete.cases(data), ]
+```
+
+```{r eval=FALSE}
+#' (1) doubtterr == 0
+#' (2) success == 1
+#' (3) weapon type != 13 (unknown)
+data <- filter(data,
+                      doubtterr!=1,
+                      success==1,
+                      weaptype1!=13,
+                      claimed!=-9)
+```
+
+![Source: terrorism.numbers](/Users/jameshedges/Documents/Projects/terrorism/output/screenshot 2.png)
+
+# Sequence 2: basic summary of terrorist incidents
+```{r eval=FALSE}
+summary(data)
+#' (1) mean year is 2011, slightly forward from center, but close
+#' (2) month is also sligthly forward shifted, with lower levels around 1st and
+#' 2nd months of the year
+#' (3) most incidents were not extended, only ab 900 out of ab 29k
+
+#' (4) top five countries:
+#' [1] (95) Iraq with 7.5K;
+#' [2] (153) Pakistan with 5K;
+#' [3] (4) Afghanistan with 3.2K;
+#' [4] (92) India with 2.7K;
+#' [5] (205) Thailand with 1.3K.
+#' (5) top two regions:
+#' [1] (6) South Asia with 11.8K;
+#' [2] (10) Middle East and North Africa 10K;
+
+#' (6) most are not part of multiple incidents, ab 4K vs. 25K
+#' (7) most are not suicide 1.7K are vs. 27.4K are not
+#' (8) top five attack types:
+#' [1] (3) Kidnapping with 17.2K
+#' [2] (2) Hijacking with 7.6K
+#' [3] (7) Armed Assault with 1.7K
+#' [4] (1) Assassination with 1.2K
+#' [5] (6) Unkown with 1K
+
+#' (9) top four target types:
+#' [1] (14) Private Citizens & Property with 8.5K
+#' [2] (3) Police with 5.4K
+#' [3] (2) Government with 4.2K
+#' [4] (1) Business with 2.9K
+
+#' (10) top four nationality of target/victim:
+#' [1] (95) Iraq with 7.4K
+#' [2] (153) Pakistan with 4.9K
+#' [3] (4) Afghanistan with 3.1K
+#' [4] (92) India with 2.7K
+#' (11) these are mirroring the country of the attacks
+
+#' (12) number of perpretrators is unkown in many cases; will need to deal with
+#' this separately
+
+#' (13) top three weapon types:
+#' [1] (6) Explosives/Bombs/Dynamite with 17.8K
+#' [2] (5) Firearms with 9K
+#' [3] (8) Incendiary with 1.6K
+
+#' (14) number of kills is 2.03 mean, with positive skew, and max of 250
+#' (15) number of US kills is 0.0052 mean, with positive skew, and max of 13
+#' (16) number of terrorist kills is 0.18 mean, with positive skew, and max of
+#' 70
+```
+
+![Source: terrorism.numbers](/Users/jameshedges/Documents/Projects/terrorism/output/screenshot 3.png)
+
+# Sequence 3: more detailed look at number of kills
+```{r eval=FALSE}
+#' Response variables are numeric values of total kilLs, US kills, and terrorist
+#' kills
+col.kills <- c("nkill", "nkillus", "nkillter")
+
+#' Round kills
+data[, col.kills] <- sapply(data[, col.kills], round)
+
+#' Summary statistics of output variables
+options(scipen=100)
+options(digits=2)
+stat.desc(data[, col.kills])
+#' lots of important information here
+#' (1) number of values is 29.2K, so that's current number of incidents
+#' (2) null counts for the three: 13.5K, 29.1K, 26.6K
+#' suprised by how many 0 kill incidents there are for the terrorists
+#' many incidents don't result in any kills even tho they're considered
+#' a success
+#' nearly all incidents do not result in kills of US citizens
+#' (3) max values for the three 250, 13, and 70
+#' these seem reasonable (not too high), might be much lower than
+#' people expect
+#' (4) sum is 59.1K for all, 151 for US, and 5.3K for terrorist kills
+#' these seem very low, especially for US43
+#' number of US deaths in motor vehicle accidents
+#' in roughly the same period 298K
+#' (5) mean number of kills per incident: 2.027, 0.005, 0.18
+#' (6) standard deviations are quite large, 5.8, 0.16, 1.18
+#' because of extended right tail
+
+#' Skew and kurtosis of kills variables
+fun.skew.kurt <- function(x) {c(skewness = skewness(x), kurtosis = kurtosis(x))}
+sapply(data[, col.kills], fun.skew.kurt)
+#' (1) very clear that these distributions are not symmetrical
+#' (2) value of skewness is quite large, and especially large for nkillsus
+#' the distribution for number of US kills is especially asymmetrical, with
+#' skewness value of 54
+#' (3) these distributions are very clearly not Gaussian
+
+#' Density plot of three kill measures
+#' (1) http://www.color-hex.com/color/fbf9ea
+ggplot(stack(data[, col.kills]), aes(x=values)) +
+  geom_density(aes(group=ind, colour=ind, fill=ind), alpha=0.5) +
+  xlim(0, 10.5) +
+  labs(x="kill count") +
+  ggtitle('All incidents from 2006-2013 [03-002-02-001]') +
+  theme(legend.title=element_blank()) +
+  theme(panel.background = element_rect(fill = '#fbf9ea'))
+ggsave("03-002-02-001.pdf",
+       path=path.output,
+       units="in",
+       width=5,
+       height=6.5)
+#' (1) shows what we expect in terms very low US kills
+#' and quite a bit higher for other measures of overall kills
+#' and terrorist kills
+#' (2) shape is very highly skewed, resulting in part from high
+#' proportion of 0-kill incidents
+#' (3) values are quantized of course (can't have fractions of kills)
+#' (4) there are slightly higher overall total kills than kills of terrorists
+#' and most of the incidents fall within the values of 0-5 or even 0-2
+#' (5) probably helpful to make logical inds on these
+#' (ai) 0
+#' (aii) >0
+#' (bi) 0
+#' (bii) 1-5
+#' (biii) >5
+
+#' Relationship between dates and kills
+dates <- as.Date(paste(
+  as.character(data$iyear),
+  as.character(data$imonth),
+  as.character(data$iday),
+  sep="/"),
+  format="%Y/%m/%d"
+)
+data <- mutate(data, dates=dates)
+data.tmp <- data[data$iday!=0,]
+data.tmp %>%
+  group_by(wday(data.tmp$dates)) %>%
+  summarise(avg = mean(nkill)) %>%
+  arrange(avg)
+#' (1) seems like there is a relationship between kills and day of the week
+#' days towards the end of the week have higher kills, with highest
+#' usually coming on Saturday, followed by Friday
+#' (2) effect probably applies for other measures as well,
+#' such as for US kills and terrorist kills
+#' (3) not clear if there are different attack types or weapon types going
+#' with date, is the effect related to there being more attacks on these days
+#' is reverse true that there are more 0-kill days for early days in the week
+
+#' Kills indexing
+data <- mutate(data, ind.nkill=findInterval(data$nkill, c(0, 1, 6, 251)))
+#' (1) needed to check this quite a bit and adjust; important to consider
+#' that the data were rounded before this
+#' (2)
+#' 0 kill incidents -> ind=1
+#' 1-5 kill incidents -> ind=2
+#' >5 kill incidents -> ind=3
+#' (3) counts of these match with above
+#' 13.5K ind=1 (roughly 45% 0-kill incidents)
+#' 13.2K ind=2 (roughly 45% 1-5kill incidents)
+#' 2.4K ind=3 (roughly 8% >5kill incidents)
+```
+
+![Source: 03-002-02-001.pdf](/Users/jameshedges/Documents/Projects/terrorism/output/screenshot 5.png)
+
+# Sequence 4: more detailed look at the top incidents by kills
+```{r eval=FALSE}
+#' Top 107 incidents in terms number of kills (includes ties)
+data.100 <- top_n(data, 100, nkill)
+
+summary(data.100)
+#' (1) 10 of the 107 incidents beyond 24 hours; not sure what the ratio for this would be for the entire dataset, but it could be an interesting thing to check; probably wouldn't be that surprising that this would be predictive of kills
+#' (2) top countries: Iraq (95) with 37 incidents; Pakistan (153) with 31 incidents; and Afghanistan (4) with 7; not surprising and basically reflects what we see in the dataset overall
+#' (3) top regions: Middle East & North Africa (10) with 49; South Asia (6) with 41; and Sub-Saharan Africa (11) with 15. Note that there is 1 incident for Western Europ and 0 incidents for North America.
+#' (4) consider country and region has being colinear, with one derived from the other; what's the right thing to do there at the point of the model; is one more helpful in terms of prediction? which should we let go of? how will these show up as such?
+#' (5) another interesting variable in multiple; categorical that gives whether the incident was part of multiple incidents or not; here ~1:10 is
+#' (6) ~63% of these are suicide attacks; percentage is much higher than for the entire set of incidents; this seems like it will be highly predictive
+#' (7) attack types are nearly all bombing/explosion, ~77 percent; could make feature out of suicide bombings; also note that this variable may be highly colinear with weaptype1 (type of weapon)
+#' (8) 47% on private citizens and property, these are public areas including busy intersections, etc.; doesn't include restaurants and movie theaters, which are counted as business; roughly equal amounts in 15,2,1,3: religious figures/institutions; government (general); business; and police
+#' (9) nationality of targets is primarily Iraqi or Pakistani
+#' (10) number of perpetrators is problematic considering it is often not recorded, 38 out of 107 are not recorded; 23.8K of these in the overall dataset; what to do with them; could either do the models without it, or do the models on just those with it, or both
+#' (11) much higher proportion are claimed than in the overall dataset; ~42% are claimed in the top 100, vs 12.6% in the overall dataset
+#' (12) 81% of these are explosives/bombs attacks; next nearest is firearm attacks with ~15%
+
+#' Plot distribution of kills for these incidents
+ggplot(stack(data.100[, "nkill"]),
+       aes(x=values)) +
+  geom_density(aes(group=ind, colour=ind, fill=ind), alpha=0.5) +
+  geom_rug(sides="b", col="red", alpha=.25) +
+  xlim(0, 300) +
+  labs(x="kill count") +
+  ggtitle('Top 107 incidents from 2006-2013 [03-003-01-001]') +
+  theme(legend.title=element_blank()) +
+  theme(panel.background = element_rect(fill = '#fbf9ea'))
+ggsave("03-003-01-001.pdf",
+       path=path.output,
+       units="in",
+       width=5,
+       height=6.5)
+
+#' Table of years
+table(data.100$iyear)
+#' (1) curious property of 2006 that only 1 incident in this set from there
+#' (2) even and high representation 2007-2011, then a down year and back up higher
+
+#' Plots of year by kills for top 107 and colored by a particular variable
+fig.name.pre <- "03-003-03"
+vars <- c(
+  "extended",
+  "country",
+  "region",
+  "multiple",
+  "suicide",
+  "attacktype1",
+  "targtype1",
+  "natlty1",
+  "claimed",
+  "weaptype1"
+)
+for (i in vars){
+  fig.name <- paste(paste(fig.name.pre, toupper(i), sep="-"), "pdf", sep=".")
+  if(i == "country"){
+    print(ggplot(arrange_(data.100, i),
+                 aes(x=factor(iyear), y=nkill, fill=get(i))) +
+            geom_bar(stat="identity") +
+            labs(x="year", y="kills") +
+            ggtitle('top 107 incidents from 2006-2013 by kills') +
+            theme(panel.background=element_rect(fill='#fbf9ea')) + 
+            scale_fill_discrete(name="",
+                                breaks=c("4", "6",
+                                         "41", "44",
+                                         "65", "92",
+                                         "95", "104",
+                                         "147", "151",
+                                         "153", "182",
+                                         "186", "195",
+                                         "200", "213",
+                                         "228", "229"),
+                                labels=c("Afghanistan", "Algeria",
+                                         "CAR","China",
+                                         "Ethiopia", "India",
+                                         "Iraq", "Kenya",
+                                         "Nigeria", "Norway",
+                                         "Pakistan", "Somalia",
+                                         "Sri Lanka", "Sudan",
+                                         "Syria", "Uganda",
+                                         "Yemen", "Congo")
+            )
+    )
+    ggsave(fig.name, path=path.output, units="in", width=6, height=6.5)
+  } else if(i == "region"){
+    print(ggplot(arrange_(data.100, i),
+                 aes(x=factor(iyear), y=nkill, fill=get(i))) +
+            geom_bar(stat="identity") +
+            labs(x="year", y="kills") +
+            ggtitle('top 107 incidents from 2006-2013 by kills') +
+            theme(panel.background=element_rect(fill='#fbf9ea')) + 
+            scale_fill_discrete(name="",
+                                breaks=c("4",
+                                         "6",
+                                         "8",
+                                         "10",
+                                         "11"),
+                                labels=c("East Asia",
+                                         "South Asia",
+                                         "Western Europe",
+                                         "Middle East & North Africa",
+                                         "Sub-Saharan Africa")
+            )
+    )
+    ggsave(fig.name, path=path.output, units="in", width=7, height=6.5)
+  } else{
+    print(ggplot(arrange_(data.100, i),
+                 aes(x=factor(iyear), y=nkill, fill=get(i))) +
+            geom_bar(stat="identity") +
+            labs(x="year", y="kills") +
+            ggtitle('top 107 incidents from 2006-2013 by kills') +
+            theme(panel.background=element_rect(fill='#fbf9ea')) + 
+            guides(fill=guide_legend(title=NULL)))
+    ggsave(fig.name, path=path.output, units="in", width=5, height=6.5)
+  }
+}
+```
+
+![Source: 03-003-01-001.pdf](/Users/jameshedges/Documents/Projects/terrorism/output/screenshot 6.png)
+
+![Source: 03-003-03-COUNTRY.pdf](/Users/jameshedges/Documents/Projects/terrorism/output/screenshot 7.png)
+
+![Source: 03-003-03-REGION.pdf](/Users/jameshedges/Documents/Projects/terrorism/output/screenshot 8.png)
+
+# Sequence 5: exploration of combinations of some possible predictors
+```{r eval=FALSE}
+#' Crosstabs of subset of predictors
+fig.name.pre <- "03-003-05"
+vars.crosstab <- list(
+  c("targtype1", "region"),
+  c("attacktype1", "suicide"),
+  c("region", "suicide"),
+  c("attacktype1", "weaptype1"),
+  c("region", "attacktype1")
+)
+for (i in vars.crosstab) {
+  fig.name <- paste(path.output,
+                    paste(
+                      paste(fig.name.pre,
+                            paste(toupper(i), collapse="-"), sep="-"),
+                      "pdf", sep="."),
+                    sep="/")
+  pdf(file=fig.name)
+  crosstab(data[[i[[1]]]], data[[i[[2]]]],
+           xlab=i[[1]], ylab=i[[2]])
+  dev.off()
+}
+```
+
+![Source: 03-003-05-ATTACKTYPE1-SUICIDE.pdf](/Users/jameshedges/Documents/Projects/terrorism/output/screenshot 10.png)
+
+![Source: 03-003-05-REGION-SUICIDE.pdf](/Users/jameshedges/Documents/Projects/terrorism/output/screenshot 11.png)
+
+![Source: terrorism.numbers](/Users/jameshedges/Documents/Projects/terrorism/output/screenshot 12.png)
+
+# Sequence 6: make outcome variables for regression models
+```{r eval=FALSE}
+#' Make outcome variables based on nkill
+#' (1) kills greater than 0
+#' 1=yes, >0 kills
+#' 2-no, 0 kills
+#' (2) kills, log of
+ind.nkill.gt0 <-
+  data$ind.nkill!=1
+
+y1.nkill.gt0 <-
+  as.numeric(ind.nkill.gt0)
+
+nkill.log <-
+  log(as.numeric(unlist(data[which(ind.nkill.gt0), "nkill"])))
+y2.nkill.log <-
+  rep(NA, length(ind.nkill.gt0))
+y2.nkill.log <-
+  replace(y2.nkill.log, which(ind.nkill.gt0), nkill.log)
+```
+
+# Sequence 7: checks of predictor-outcome coverage
+```{r eval=FALSE}
+#' Mosaic plots to y1 (greater than 0 kills)
+fig.name.pre <- "04-001-02"
+vars.crosstab <- list(
+  c("iyear", "y1.nkill.gt0"),
+  c("extended", "y1.nkill.gt0"),
+  c("region", "y1.nkill.gt0"),
+  c("multiple", "y1.nkill.gt0"),
+  c("suicide", "y1.nkill.gt0"),
+  c("attacktype1", "y1.nkill.gt0"),
+  c("claimed", "y1.nkill.gt0"),
+  c("weaptype1", "y1.nkill.gt0")
+)
+for (i in vars.crosstab) {
+  fig.name <- paste(path.output,
+                    paste(
+                      paste(fig.name.pre,
+                            paste(toupper(i), collapse="-"), sep="-"),
+                      "pdf", sep="."),
+                    sep="/")
+  pdf(file=fig.name)
+  crosstab(data[[i[[1]]]], data[[i[[2]]]],
+           xlab=i[[1]], ylab=i[[2]])
+  dev.off()
+}
+
+#' Box plots to y2 (for gt0 kills, log(kills))
+fig.name.pre <- "04-001-02"
+vars.crosstab <- list(
+  c("iyear", "y2.nkill.log"),
+  c("extended", "y2.nkill.log"),
+  c("region", "y2.nkill.log"),
+  c("multiple", "y2.nkill.log"),
+  c("suicide", "y2.nkill.log"),
+  c("attacktype1", "y2.nkill.log"),
+  c("claimed", "y2.nkill.log"),
+  c("weaptype1", "y2.nkill.log")
+)
+for (i in vars.crosstab) {
+  fig.name <- paste(path.output,
+                    paste(
+                      paste(fig.name.pre,
+                            paste(toupper(i), collapse="-"), sep="-"),
+                      "pdf", sep="."),
+                    sep="/")
+  pdf(file=fig.name)
+  boxplot(get(i[[2]])~get(i[[1]]), data=data, xlab=i[[1]], ylab=i[[2]])
+  dev.off()
+}
+```
+
+![Source: 04-001-02-ATTACKTYPE1-Y1.NKILL.GT0.pdf](/Users/jameshedges/Documents/Projects/terrorism/output/screenshot 13.png)
+
+![Source: 04-001-02-ATTACKTYPE1-Y2.NKILL.LOG.pdf](/Users/jameshedges/Documents/Projects/terrorism/output/screenshot 14.png)
+
+![Source: 04-001-02-SUICIDE-Y1.NKILL.GT0.pdf](/Users/jameshedges/Documents/Projects/terrorism/output/screenshot 15.png)
+
+![Source: 04-001-02-SUICIDE-Y2.NKILL.LOG.pdf](/Users/jameshedges/Documents/Projects/terrorism/output/screenshot 16.png)
+
+# Sequence 8: logistic model of whether casualties will occur
+```{r eval=FALSE}
+# 04-002-01-partition -----------------------------------------------------
+
+set.seed(3456)
+ind.train <- createDataPartition(data$y1.nkill.gt0, p=0.7, list=FALSE, times=1)
+head(ind.train)
+data.train <- data[ind.train,]
+data.test <- data[-ind.train,]
+
+# 04-003-01-logistic ------------------------------------------------------
+
+mod.logit = glm(
+  y1.nkill.gt0 ~ 
+    extended +
+    region +
+    suicide +
+    attacktype1 +
+    claimed +
+    weaptype1,
+  family=binomial(logit),
+  data=data.train)
+summary(mod.logit)
+# Call:
+#   glm(formula = y1.nkill.gt0 ~ extended + region + suicide + attacktype1 + 
+#         claimed + weaptype1, family = binomial(logit), data = data.train)
+# 
+# Deviance Residuals: 
+#   Min      1Q  Median      3Q     Max  
+# -3.645  -0.891   0.051   0.786   3.259  
+# 
+# Coefficients:
+# Estimate Std. Error z value             Pr(>|z|)    
+# (Intercept)    2.989335   1.289577    2.32              0.02045 *  
+# extended1     -0.396945   0.136897   -2.90              0.00374 ** 
+# region2       -0.238416   0.742793   -0.32              0.74823    
+# region3        0.424098   0.407504    1.04              0.29801    
+# region4        2.267816   0.600009    3.78              0.00016 ***
+# region5        0.660312   0.392815    1.68              0.09277 .  
+# region6        1.030795   0.389407    2.65              0.00812 ** 
+# region7       -1.272810   1.087317   -1.17              0.24176    
+# region8       -1.655852   0.466763   -3.55              0.00039 ***
+# region9       -0.759227   0.620892   -1.22              0.22141    
+# region10       1.554028   0.389987    3.98    0.000067530254832 ***
+# region11       1.610873   0.393586    4.09    0.000042618149524 ***
+# region12       0.430974   0.402491    1.07              0.28427    
+# region13      -0.000891   1.350251    0.00              0.99947    
+# suicide1       6.835571   0.722795    9.46 < 0.0000000000000002 ***
+# attacktype12  -4.383903   0.583412   -7.51    0.000000000000057 ***
+# attacktype13  -5.356724   0.589194   -9.09 < 0.0000000000000002 ***
+# attacktype14  -8.180578   0.854953   -9.57 < 0.0000000000000002 ***
+# attacktype15  -6.518312   0.776560   -8.39 < 0.0000000000000002 ***
+# attacktype16  -5.590092   0.596050   -9.38 < 0.0000000000000002 ***
+# attacktype17  -7.192484   0.604338  -11.90 < 0.0000000000000002 ***
+# attacktype18  -7.308572   0.674997  -10.83 < 0.0000000000000002 ***
+# attacktype19   7.282968 137.910031    0.05              0.95788    
+# claimed1       0.559636   0.054851   10.20 < 0.0000000000000002 ***
+# weaptype15     1.751979   1.080778    1.62              0.10501    
+# weaptype16     0.618216   1.088424    0.57              0.57004    
+# weaptype17    -6.805785 196.971634   -0.03              0.97244    
+# weaptype18    -0.005351   1.090670    0.00              0.99609    
+# weaptype19     2.352771   1.068585    2.20              0.02768 *  
+# weaptype110    1.503176   1.448941    1.04              0.29954    
+# weaptype111   -0.413271   1.509714   -0.27              0.78428    
+# weaptype112    1.846236   1.314407    1.40              0.16014    
+# ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# (Dispersion parameter for binomial family taken to be 1)
+# 
+# Null deviance: 28088  on 20339  degrees of freedom
+# Residual deviance: 20683  on 20308  degrees of freedom
+# AIC: 20747
+# 
+# Number of Fisher Scoring iterations: 10
+
+# 04-004-01-conf ints -----------------------------------------------------
+
+confint(mod.logit)
+# 2.5 % 97.5 %
+# (Intercept)   -0.171   5.34 *
+# extended1     -0.665  -0.13 **
+# region2       -1.762   1.18
+# region3       -0.350   1.25
+# region4        1.124   3.49 *** East Asia
+# region5       -0.083   1.46 .
+# region6        0.295   1.83 **  South Asia
+# region7       -3.535   0.76
+# region8       -2.563  -0.73 *** Western Europe
+# region9       -2.021   0.44
+# region10       0.817   2.35 *** Middle East & North Africa
+# region11       0.866   2.42 *** Sub-Saharan Africa
+# region12      -0.333   1.25
+# region13      -3.243   2.40
+# suicide1       5.674   8.65 ***
+# attacktype12  -5.784  -3.42 *** Armed Assault
+# attacktype13  -6.764  -4.37 *** Bombing/Explosion
+# attacktype14 -10.084  -6.67 *** Hijacking
+# attacktype15  -8.218  -5.11 *** Hostage Taking (Barricade Incident)
+# attacktype16  -7.007  -4.59 *** Hostage Taking (Kidnapping)
+# attacktype17  -8.621  -6.17 *** Facility/Infrastructure Attack
+# attacktype18  -8.838  -6.12 *** Unarmed Assault
+# attacktype19 -14.185     NA
+# claimed1       0.452   0.67 ***
+# weaptype15     0.018   4.69
+# weaptype16    -1.137   3.57
+# weaptype17        NA  27.00
+# weaptype18    -1.767   2.95
+# weaptype19     0.654   5.28 *   Melee
+# weaptype110   -1.391   4.82
+# weaptype111   -3.772   2.94
+# weaptype112   -0.554   5.04
+
+confint.default(mod.logit)
+
+exp(cbind(OR=coef(mod.logit), confint(mod.logit)))
+# OR        2.5 %            97.5 %
+# (Intercept)    19.87247   0.84260327          207.7527
+# extended1       0.67237   0.51401828            0.8793
+# region2         0.78788   0.17161847            3.2589
+# region3         1.52821   0.70445279            3.5042
+# region4         9.65829   3.07570210           32.6959
+# region5         1.93540   0.92013960            4.3226
+# region6         2.80329   1.34245578            6.2234
+# region7         0.28004   0.02916424            2.1486
+# region8         0.19093   0.07703580            0.4843
+# region9         0.46803   0.13251168            1.5464
+# region10        4.73049   2.26274417           10.5135
+# region11        5.00718   2.37709366           11.2003
+# region12        1.53876   0.71684169            3.4968
+# region13        0.99911   0.03905851           10.9689
+# suicide1      930.35987 291.05424516         5718.5431
+# attacktype12    0.01248   0.00307649            0.0328
+# attacktype13    0.00472   0.00115421            0.0126
+# attacktype14    0.00028   0.00004176            0.0013
+# attacktype15    0.00148   0.00026964            0.0060
+# attacktype16    0.00373   0.00090558            0.0102
+# attacktype17    0.00075   0.00018034            0.0021
+# attacktype18    0.00067   0.00014508            0.0022
+# attacktype19 1455.30148   0.00000069                NA
+# claimed1        1.75004   1.57200131            1.9491
+# weaptype15      5.76600   1.01835220          109.3549
+# weaptype16      1.85561   0.32074356           35.4727
+# weaptype17      0.00111           NA 529705868740.7859
+# weaptype18      0.99466   0.17083183           19.0583
+# weaptype19     10.51466   1.92276007          196.9670
+# weaptype110     4.49595   0.24871265          123.7160
+# weaptype111     0.66148   0.02299465           18.9764
+# weaptype112     6.33593   0.57488838          154.1015
+
+#' Test overall significance of region
+wald.test(b=coef(mod.logit), Sigma=vcov(mod.logit), Terms=3:14)
+# Wald test:
+#   ----------
+#   
+#   Chi-squared test:
+#   X2 = 568.7, df = 12, P(> X2) = 0.0
+
+#' Test overall significance of attacktype1
+wald.test(b=coef(mod.logit), Sigma=vcov(mod.logit), Terms=3:14)
+# Wald test:
+#   ----------
+#   
+#   Chi-squared test:
+#   X2 = 568.0, df = 8, P(> X2) = 0.0
+
+#' Test overall significance of weapontype1
+wald.test(b=coef(mod.logit), Sigma=vcov(mod.logit), Terms=25:32)
+# Wald test:
+#   ----------
+#   
+#   Chi-squared test:
+#   X2 = 201.3, df = 8, P(> X2) = 0.0
+
+with(mod.logit, null.deviance - deviance)
+with(mod.logit, pchisq(null.deviance - deviance, df.null - df.residual, lower.tail=FALSE))
+with(mod.logit, pchisq(null.deviance - deviance, df.null - df.residual, lower.tail=FALSE))
+# > with(mod.logit, null.deviance - deviance)
+# [1] 7405
+# > with(mod.logit, pchisq(null.deviance - deviance, df.null - df.residual, lower.tail=FALSE))
+# [1] 0
+# > with(mod.logit, pchisq(null.deviance - deviance, df.null - df.residual, lower.tail=FALSE))
+# [1] 0
+
+anova(mod.logit, test="Chi")
+# extended     1        1     20338      28087                0.25    
+# region      12      927     20326      27159 <0.0000000000000002 ***
+# suicide      1     1340     20325      25820 <0.0000000000000002 ***
+# attacktype1  8     4834     20317      20985 <0.0000000000000002 ***
+# claimed      1      104     20316      20881 <0.0000000000000002 ***
+# weaptype1    8      198     20308      20683 <0.0000000000000002 ***
+
+table(data.train$y1.nkill.gt0>0, fitted(mod.logit)>0.5)
+#         FALSE TRUE
+#   FALSE  8050 1375
+#   TRUE   4175 6740
+```
+
+# Summary: prediction through extended, region, suicide, and claimed
