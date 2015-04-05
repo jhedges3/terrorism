@@ -15,7 +15,9 @@ rm(list = ls())
 # install.packages("data.table")
 # install.packages("descr")
 # install.packages("caret")
-install.packages("aod")
+# install.packages("aod")
+# install.packages("ROCR")
+
 library(dplyr)
 library(plyr)
 # library(e1071)
@@ -30,6 +32,7 @@ library(plyr)
 # library(descr)
 library(caret)
 library(aod)
+library(ROCR)
 
 #' Get the selected data, saved in 02-selection.R
 data <- readRDS("data.rds")
@@ -133,7 +136,7 @@ mod.logit = glm(
     weaptype1,
   family=binomial(logit),
   data=data.train)
-summary(mod.logit)
+mod.logit.summary <- summary(mod.logit)
 # Call:
 #   glm(formula = y1.nkill.gt0 ~ extended + region + suicide + attacktype1 + 
 #         claimed + weaptype1, family = binomial(logit), data = data.train)
@@ -187,6 +190,52 @@ summary(mod.logit)
 # 
 # Number of Fisher Scoring iterations: 10
 
+#' Sorted coefficients
+mod.logit.summary.coef <- mod.logit.summary$coefficients
+mod.logit.summary.coef[order(mod.logit.summary.coef[,"Estimate"], 
+                             decreasing=TRUE),]
+#                   Estimate   Std. Error       z value     Pr(>|z|)
+# attacktype19  7.2829683579 137.91003072  5.280956e-02 9.578836e-01
+# suicide1      6.8355714668   0.72279536  9.457132e+00 3.165037e-21
+# (Intercept)   2.9893354706   1.28957684  2.318075e+00 2.044526e-02
+# weaptype19    2.3527708671   1.06858462  2.201764e+00 2.768200e-02
+# region4       2.2678163198   0.60000932  3.779635e+00 1.570583e-04
+# weaptype112   1.8462363900   1.31440694  1.404616e+00 1.601356e-01
+# weaptype15    1.7519792154   1.08077825  1.621035e+00 1.050102e-01
+# region11      1.6108734512   0.39358642  4.092808e+00 4.261815e-05
+# region10      1.5540284847   0.38998676  3.984824e+00 6.753025e-05
+# weaptype110   1.5031762247   1.44894133  1.037431e+00 2.995352e-01
+# region6       1.0307951504   0.38940660  2.647092e+00 8.118723e-03
+# region5       0.6603120692   0.39281497  1.680975e+00 9.276781e-02
+# weaptype16    0.6182160868   1.08842401  5.679920e-01 5.700404e-01
+# claimed1      0.5596358775   0.05485053  1.020293e+01 1.923888e-24
+# region12      0.4309740356   0.40249142  1.070766e+00 2.842748e-01
+# region3       0.4240979631   0.40750440  1.040720e+00 2.980055e-01
+# region13     -0.0008905702   1.35025127 -6.595589e-04 9.994737e-01
+# weaptype18   -0.0053510358   1.09067044 -4.906189e-03 9.960854e-01
+# region2      -0.2384155769   0.74279312 -3.209717e-01 7.482318e-01
+# extended1    -0.3969452342   0.13689705 -2.899589e+00 3.736518e-03
+# weaptype111  -0.4132707776   1.50971353 -2.737412e-01 7.842835e-01
+# region9      -0.7592268393   0.62089229 -1.222800e+00 2.214054e-01
+# region7      -1.2728096269   1.08731700 -1.170597e+00 2.417609e-01
+# region8      -1.6558524480   0.46676272 -3.547525e+00 3.888688e-04
+# attacktype12 -4.3839029682   0.58341248 -7.514243e+00 5.724131e-14
+# attacktype13 -5.3567242918   0.58919352 -9.091621e+00 9.757317e-20
+# attacktype16 -5.5900922418   0.59605001 -9.378562e+00 6.687830e-21
+# attacktype15 -6.5183116674   0.77656025 -8.393826e+00 4.705722e-17
+# weaptype17   -6.8057854851 196.97163353 -3.455211e-02 9.724369e-01
+# attacktype17 -7.1924838135   0.60433826 -1.190142e+01 1.163494e-32
+# attacktype18 -7.3085720943   0.67499665 -1.082757e+01 2.548338e-27
+# attacktype14 -8.1805775435   0.85495250 -9.568458e+00 1.085115e-21
+#' (1) suicide has a very big impact on log odds, with 6.82 value
+#' (2) attacktype1 and weaptype19 seem suspect and the prior esp
+#'  consider removing them and redoing, or removing some levels or something
+#' (3) regions 4,10,11,6 all showing significant positive effects
+#' (4) claimed has a small, but positive, sig. B
+#' (5) region8 has significant negative effect of -1.6
+#' (6) if they are real attack types 2,3,6,5,7,8,4 all have negative effects
+#' (7) weapon type 7 also has sig. neg. B; this effect has very large error
+
 # 04-004-01-conf ints -----------------------------------------------------
 
 confint(mod.logit)
@@ -227,7 +276,7 @@ confint(mod.logit)
 confint.default(mod.logit)
 
 exp(cbind(OR=coef(mod.logit), confint(mod.logit)))
-# OR        2.5 %            97.5 %
+#                      OR        2.5 %            97.5 %
 # (Intercept)    19.87247   0.84260327          207.7527
 # extended1       0.67237   0.51401828            0.8793
 # region2         0.78788   0.17161847            3.2589
@@ -250,11 +299,11 @@ exp(cbind(OR=coef(mod.logit), confint(mod.logit)))
 # attacktype16    0.00373   0.00090558            0.0102
 # attacktype17    0.00075   0.00018034            0.0021
 # attacktype18    0.00067   0.00014508            0.0022
-# attacktype19 1455.30148   0.00000069                NA
+# attacktype19 1455.30148   0.00000069                NA -seems error; low data
 # claimed1        1.75004   1.57200131            1.9491
 # weaptype15      5.76600   1.01835220          109.3549
 # weaptype16      1.85561   0.32074356           35.4727
-# weaptype17      0.00111           NA 529705868740.7859
+# weaptype17      0.00111           NA 529705868740.7859 -seems error; low data
 # weaptype18      0.99466   0.17083183           19.0583
 # weaptype19     10.51466   1.92276007          196.9670
 # weaptype110     4.49595   0.24871265          123.7160
@@ -292,6 +341,95 @@ with(mod.logit, pchisq(null.deviance - deviance, df.null - df.residual, lower.ta
 anova(mod.logit, test="Chi")
 
 table(data.train$y1.nkill.gt0>0, fitted(mod.logit)>0.5)
+
+
+# TEST --------------------------------------------------------------------
+
+probs.test <- predict(mod.logit, data.test, type="response")
+#' Version 1
+y1.nkill.gt0.est <- rep(0, length(probs.test))
+y1.nkill.gt0.est[probs.test >= 0.5] <- 1
+table(data.test$y1.nkill.gt0, y1.nkill.gt0.est)
+#' Version 2
+y1.nkill.gt0.est.v2 <- cut(probs.test, breaks=c(-Inf, 0.5, Inf), labels=c(0,1))
+table(data.test$y1.nkill.gt0, y1.nkill.gt0.est.v2)
+#' Confusion matrix
+confusionMatrix(data.test$y1.nkill.gt0, y1.nkill.gt0.est.v2)
+#' ROC curve
+pred.fit = prediction(probs.test, data.test$y1.nkill.gt0)
+perf.fit = performance(pred.fit, "tpr", "fpr")
+plot(perf.fit,
+     col="blue",
+     lwd=2,
+     main="ROC curve: logit model on y1 (nkill > 0)")
+abline(a=0, b=1, lwd=2, lty=2, col="gray")
+
+# FIT WITH CARET ----------------------------------------------------------
+
+mod.logit.v2 = train(y1.nkill.gt0 ~ extended + region + suicide + attacktype1 + claimed + weaptype1,
+                     method="glm",
+                     data=data.train,
+                     family=binomial(link='logit'))
+mod.logit.v2.summary <- summary(mod.logit.v2)
+# Call:
+#   NULL
+# 
+# Deviance Residuals: 
+#   Min       1Q   Median       3Q      Max  
+# -3.6446  -0.8912   0.0511   0.7855   3.2587  
+# 
+# Coefficients: (3 not defined because of singularities)
+# Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)   5.395e+00  1.071e+00   5.039 4.68e-07 ***
+#   extended1    -3.969e-01  1.369e-01  -2.900 0.003737 ** 
+#   region2      -2.384e-01  7.428e-01  -0.321 0.748232    
+# region3       4.241e-01  4.075e-01   1.041 0.298006    
+# region4       2.268e+00  6.000e-01   3.780 0.000157 ***
+#   region5       6.603e-01  3.928e-01   1.681 0.092768 .  
+# region6       1.031e+00  3.894e-01   2.647 0.008119 ** 
+#   region7      -1.273e+00  1.087e+00  -1.171 0.241761    
+# region8      -1.656e+00  4.668e-01  -3.548 0.000389 ***
+#   region9      -7.592e-01  6.209e-01  -1.223 0.221405    
+# region10      1.554e+00  3.900e-01   3.985 6.75e-05 ***
+#   region11      1.611e+00  3.936e-01   4.093 4.26e-05 ***
+#   region12      4.310e-01  4.025e-01   1.071 0.284275    
+# region13     -8.906e-04  1.350e+00  -0.001 0.999474    
+# suicide1      6.836e+00  7.228e-01   9.457  < 2e-16 ***
+#   attacktype12 -4.384e+00  5.834e-01  -7.514 5.72e-14 ***
+#   attacktype13 -5.357e+00  5.892e-01  -9.092  < 2e-16 ***
+#   attacktype14 -8.181e+00  8.550e-01  -9.568  < 2e-16 ***
+#   attacktype15 -6.518e+00  7.766e-01  -8.394  < 2e-16 ***
+#   attacktype16 -5.590e+00  5.960e-01  -9.379  < 2e-16 ***
+#   attacktype17 -7.192e+00  6.043e-01 -11.901  < 2e-16 ***
+#   attacktype18 -7.309e+00  6.750e-01 -10.828  < 2e-16 ***
+#   attacktype19  7.283e+00  1.379e+02   0.053 0.957884    
+# claimed0     -5.596e-01  5.485e-02 -10.203  < 2e-16 ***
+#   claimed1             NA         NA      NA       NA    
+# weaptype12   -1.846e+00  1.314e+00  -1.405 0.160136    
+# weaptype15   -9.426e-02  8.076e-01  -0.117 0.907084    
+# weaptype16   -1.228e+00  8.184e-01  -1.501 0.133466    
+# weaptype17   -8.652e+00  1.970e+02  -0.044 0.964964    
+# weaptype18   -1.852e+00  8.193e-01  -2.260 0.023821 *  
+#   weaptype19    5.065e-01  8.100e-01   0.625 0.531755    
+# weaptype110  -3.431e-01  1.280e+00  -0.268 0.788681    
+# weaptype111  -2.260e+00  1.326e+00  -1.703 0.088487 .  
+# weaptype112          NA         NA      NA       NA    
+# weaptype113          NA         NA      NA       NA    
+# ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# (Dispersion parameter for binomial family taken to be 1)
+# 
+# Null deviance: 28088  on 20339  degrees of freedom
+# Residual deviance: 20683  on 20308  degrees of freedom
+# AIC: 20747
+# 
+# Number of Fisher Scoring iterations: 10
+
+# probs.test.v2 <- predict(mod.logit.v2, data.test)
+# y1.nkill.gt0.est.vX <- cut(probs.test.v2, breaks=c(-Inf, 0.5, Inf), labels=c(0,1))
+# confusionMatrix(data.test$y1.nkill.gt0, y1.nkill.gt0.est.vX)
+
 
 # bottom ------------------------------------------------------------------
 

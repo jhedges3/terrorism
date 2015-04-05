@@ -1,5 +1,7 @@
 # top ---------------------------------------------------------------------
 
+rm(list = ls())
+
 # install.packages("dplyr")
 # install.packages("plyr")
 # install.packages("e1071")
